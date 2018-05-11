@@ -28,6 +28,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <linux/i2c.h>
+#include <vector>
 using namespace std;
 #define MUTEX_BLOCKED 127
 #define
@@ -217,11 +218,12 @@ private:
 public:
     ConnModule(I2C *ptrClass);
     ~ConnModule();
-    unsigned int SetUUID(unsigned char *uuid[])
+    unsigned int SetUUID(std::vector<unsigned char> uuid)
     {
         unsigned int cnt=3;
         unsigned char msg[4],*answer;
         unsigned int error;
+
         msg[0]=0x01;
         for(int i=0;i<4;i++)
         {
