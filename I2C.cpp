@@ -14,7 +14,6 @@
  *
  *Created by eleps on 27.04.18.
  */
-#include <I2C.h>
 #include <unistd.h>
 #include <stdint.h>
 #include <fcntl.h>
@@ -31,32 +30,23 @@
 #include <vector>
 using namespace std;
 #define MUTEX_BLOCKED 127
-#define
-#define
-#define
-#define
-#define
-#define
-#define
-#define
-#define
-#define
-#define
-#define
+
 
 class I2C
 {
+    static I2C * theOneTrueInstance;
 private:
     const unsigned int MaxLen=40;
     unsigned int MsgLen;
-    unsigned char LastRecMsg[MaxLen];
+    std::vector<unsigned char>  LastRecMsg;
     int Mutex;
     int NewData;
     int i2cfd;
+    int init=0;
     std::string DeviceName;
     struct i2c_client *i2c_data;
     /*Unsafe Methods*/
-    int SendRaw(struct i2c_client *client, unsigned char *buffer, unsigned int len)
+    /*int SendRaw(struct i2c_client *client, unsigned char *buffer, unsigned int len)
     {
         struct i2c_msg msgs[2];
         unsigned char txbuf[len];
@@ -81,6 +71,14 @@ private:
             return ret;
         }
         return 0;
+    }*/
+    int SendRaw(unsigned char *buffer, unsigned int len)
+    {
+        this->LastRecMsg.clear();
+        this->LastRecMsg.push_back(0x02);
+        this->LastRecMsg.push_back(0x02);
+        this->LastRecMsg.push_back(CRC8(this->LastRecMsg.data(),2));
+        return 0;
     }
     void SetDeviceName(std::string Name)
     {
@@ -94,25 +92,8 @@ private:
         /*
          * Explicitly cleans last read buffer
          */
-        for(unsigned int i=0;i<this->MaxLen;i++)
-        {
-            this->LastRecMsg[i]='\0';
-        }
+        this->LastRecMsg.clear();
     }
-    void SetRecMsg(unsigned char *data,unsigned int len)
-    {
-        /*
-         * Explicitly write message to storage
-         */
-        unsigned int cnt;
-        CleanRecMsg();
-        cnt=(len>(this->MaxLen))?MaxLen:len;
-        for(unsigned int i=0;i<cnt;i++)
-        {
-            this->LastRecMsg[i]=data[i];
-        }
-    }
-
     /*Safe functions*/
     unsigned char CRC8(unsigned char *buffer, unsigned int len)
     {
@@ -125,47 +106,51 @@ private:
         }
         return crc;
     }
-    int SendPacket(unsigned char Address,unsigned char *Buffer, unsigned int Len)
+    int SendPacket(std::vector<unsigned char> address,std::vector<unsigned char> buffer)
     {
-        unsigned int FullLen=Len+2;
-        unsigned char *Result[FullLen];
-        Result[0]=(unsigned char *) Address;
-        Result[1]=(unsigned char *)FullLen;
-        for(int i=0;i<Len-2;i++)
+        unsigned char FullLen=buffer.size()+3;
+        unsigned char *temp;
+        temp=buffer.data();
+        unsigned char Result[FullLen];
+        Result[0]=FullLen;
+        cout<<"Here works1";
+        Result[0]=address.front();
+        Result[1]=FullLen;
+        for(int i=0;i<buffer.size();i++)
         {
-            Result[i+1]=(unsigned char *) Buffer[i];
+            Result[i+2]= temp[i];
         }
-        Result[Len-1]=(unsigned char *) CRC8(Result[1],Len-1);
+        Result[FullLen-1]=CRC8(Result+sizeof(unsigned char),FullLen-2);
         CleanRecMsg();
-        if(SendRaw(this->i2c_data,Result[0], FullLen))
+        if(SendRaw(Result, FullLen))
         {
             return 1;
         }
-        this->MsgLen=this->LastRecMsg[0];
-        if(CRC8(this->LastRecMsg,this->MsgLen))
+        cout<<"Here works2";
+        if(CRC8(this->LastRecMsg.data(),this->LastRecMsg.size()))
         {
             return 1;
         }
-        this->LastRecMsg[this->MsgLen]='\0';
-        this->MsgLen--;
         return 0;
     }
-    I2C(){};
-    I2C(const I2C& root) = delete;
-    I2C& operator=(const I2C&) = delete;
 public:
-    static I2C& Instance(void)
-    {
-        static I2C theSingleInstance;
-        return theSingleInstance;
+    static I2C & getInstance() {
+        if (!theOneTrueInstance) initInstance();
+        return *theOneTrueInstance;
     }
-    unsigned int Init(std::string device)
+    static void initInstance() { new I2C; }
+    unsigned int begin(std::string device)
     {
         this->Mutex=1;
-        this->MsgLen=0;
-        CleanRecMsg(void);
+        if (this->init==1)
+        {
+            cout<<"everything initialized";
+            this->Mutex=0;
+            return 1;
+        }
+        CleanRecMsg();
         SetDeviceName(device);
-        int statusVal = -1;
+        /*int statusVal = -1;
         this->i2cfd = -1;
         SetDeviceName(device);
         char *filename = "/dev/i2c-2";
@@ -173,10 +158,10 @@ public:
         {
             perror("Failed to open the i2c bus");
             this->Mutex=0;
-        }
+        }*/
         this->Mutex=0;
     }
-    unsigned int Transaction(unsigned char address,unsigned char *buffer, unsigned int len)
+    unsigned int transaction(std::vector<unsigned char> address,std::vector<unsigned char> buffer)
     {
         unsigned int status=0;
         if(this->Mutex)
@@ -188,81 +173,94 @@ public:
             return 1;
         }
         this->Mutex=1;
-        if (SendPacket(address,buffer, len))
+        if (SendPacket(address,buffer))
         {
             this->Mutex=0;
             return 1;
         }
+        cout<<"Here works3";
         this->Mutex=0;
         return 0;
     }
-    unsigned char RecData(void)
+    std::vector<unsigned char> recData(void)
     {
-        if(this->NewData)
-        {
-            return 1;
-        }
         this->NewData=0;
-        return *LastRecMsg[];
+        return LastRecMsg;
     }
 protected:
+    I2C() {
+        if (theOneTrueInstance) throw std::logic_error("Instance already exists");
+        theOneTrueInstance = this;
+    }
+
+    virtual ~I2C() { }
 
 };
+I2C* I2C::theOneTrueInstance = 0;
+
+
+
 class ConnModule
 {
 private:
-    I2C *ptrI2C;
-    unsigned char getAddress(void);
-    unsigned char setAddress(unsigned char address);
+    uint16_t WrongTransactions=3;
+    std::vector<unsigned char> addr;
 
 public:
-    ConnModule(I2C *ptrClass);
-    ~ConnModule();
+    std::vector<unsigned char>getAddress(void);
+    std::vector<unsigned char> setAddress(std::vector<unsigned char>addr)
+    {
+        this->addr=addr;
+    }
+    ConnModule(std::string filename) {
+        I2C &ptrSPI = I2C::getInstance();
+        ptrSPI.begin(filename);
+        std::vector<unsigned char> address;
+        address.push_back(0x01);
+        this->addr=address;
+    }
+    ~ConnModule()
+    {
+
+    }
     unsigned int SetUUID(std::vector<unsigned char> uuid)
     {
-        unsigned int cnt=3;
-        unsigned char msg[4],*answer;
+        I2C & ptrI2C=I2C::getInstance();
+        unsigned int cnt=this->WrongTransactions;
         unsigned int error;
-
-        msg[0]=0x01;
-        for(int i=0;i<4;i++)
-        {
-            msg[i+1]=uuid[i];
-        }
-        while(cnt--)
-        {
-            error=this->ptrI2C->Transaction(getAddress(),msg,5);
-            if (error==0)
-            {
-                answer=this->ptrI2C->RecData();
-                if (answer==0)
-                {
+        std::vector<unsigned char> msg, answer;
+        msg.push_back(0x00);
+        while(cnt--) {
+            cout<<"prepared "<<cnt<<"\n";
+            error=ptrI2C.transaction(this->addr,msg);
+            if (error==0) {
+                answer=ptrI2C.recData();
+                if (answer.size()==1) {
+                    //if answer
                     return 0;
                 }
-                if (answer!=0&&cnt==0)
-                {
+                else if (cnt==0) {
                     return 1;
                 }
             }
-            if (error!=0&&cnt==0)
-            {
+            else if (cnt==0) {
                 return 1;
             }
         }
     }
-    unsigned int SetName(unsigned char *name[]);
+    unsigned int SetName(std::vector<unsigned char> data);
     unsigned int StartInit(void);
-    unsigned int WriteString(unsigned char *string[]);
+    unsigned int WriteString(std::vector<unsigned char> data);
     unsigned int EndInit(void);
-    unsigned int WriteValue(unsigned char *string[]);
-    unsigned int ReadValue(unsigned char *string[]);
+    unsigned int WriteValue(std::vector<unsigned char> data);
+    unsigned int ReadValue(std::vector<unsigned char> data);
     unsigned int ReadLastChangedValue(void);
-    unsigned int StartBonding(unsigned char *string[]);
-    unsigned int CheckBonding(unsigned char *string[]);
+    unsigned int StartBonding(std::vector<unsigned char> data);
+    unsigned int CheckBonding(std::vector<unsigned char> data);
 
 protected:
 };
-
+/*
 class BoardModule
 {
 private:
@@ -310,4 +308,22 @@ public:
     }
 
 protected:
-};
+};*/
+int main(void)
+{
+    std::string filename="/dev/ttyUSB0";
+    I2C & test =I2C::getInstance();
+    test.begin(filename);
+    std::vector<unsigned char> data;
+    std::vector<unsigned char> address;
+    address.push_back(0x01);
+    std::vector<unsigned char> received;
+    ConnModule module(filename);
+    unsigned char value= 1;
+    data.push_back( value);
+    address.push_back( 0x01);
+    cout<<"Here works0";
+    test.transaction(address,data);
+    module.SetUUID(data);
+    return 1;
+}

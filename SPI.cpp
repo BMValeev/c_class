@@ -35,9 +35,8 @@ using namespace std;
 */
 class SPI
 {
+    static SPI * theOneTrueInstance;
 private:
-    const unsigned int MaxLen=40;
-    unsigned int MsgLen=40;
     std::vector<unsigned char> LastRecMsg;
     int Mutex;
     int NewData;
@@ -46,6 +45,7 @@ private:
     unsigned char bitsPerWord;
     unsigned int speed;
     std::string DeviceName;
+    int init=0;
     /*Unsafe Methods*/
     /*int SendRaw(unsigned char *buffer, unsigned int len) //original
     {
@@ -184,7 +184,6 @@ private:
     int ReceivePacket(void)
     {
         CleanRecMsg();
-        this->MsgLen=0;
         if(ReceiveRaw())
         {
             return 1;
@@ -198,19 +197,22 @@ private:
         cout<<"Here works3\n";
         return 0;
     }
-    SPI(){};
-    ~SPI() {};
-    SPI(const SPI& root) = delete;
-    SPI& operator=(const SPI&) = delete;
 public:
-    static SPI& instance(void)/*Need to check*/
-    {
-        static SPI theSingleInstance;
-        return theSingleInstance;
+    static SPI & getInstance() {
+        if (!theOneTrueInstance) initInstance();
+        return *theOneTrueInstance;
     }
+    static void initInstance() { new SPI; }
     int begin(std::string device)/*Need to check*/
     {
         this->Mutex=1;
+        if (this->init==1)
+        {
+            cout<<"everything initialized";
+            this->Mutex=0;
+            return 1;
+        }
+        this->init=1;
         CleanRecMsg();
         SetDeviceName(device);
         int statusVal = -1;
@@ -283,92 +285,112 @@ public:
         return LastRecMsg;
     }
 protected:
+    SPI() {
+        if (theOneTrueInstance) throw std::logic_error("Instance already exists");
+        theOneTrueInstance = this;
+    }
 
+    virtual ~SPI() { }
 };
 
+SPI* SPI::theOneTrueInstance = 0;
 
-class MCU : public SPI
+
+class MCU
 {
+
 private:
-    SPI & ptrSPI;
-
+    uint16_t WrongTransactions=3;
 public:
-    MCU(){}
-    ~MCU(){}
-    static void initInstance()
+    MCU(std::string filename)
     {
-        new MCU;
+        SPI & ptrSPI=SPI::getInstance();
+        ptrSPI.begin(filename);
     }
-    /*unsigned int SetStanby(unsigned int Status)
+    ~MCU(){}
+    uint16_t SetStanby(uint16_t Status)
     {
-        unsigned int cnt=3;
-        unsigned char msg[4],*answer;
+        SPI & ptrSPI=SPI::getInstance();
+        unsigned int cnt=this->WrongTransactions;
         unsigned int error;
-        msg[0]=0x00;
-        if (Status)
-        {
-            msg[1]=0x01;
-        }
-        else
-        {
-            msg[1]=0x00;
-        }
-        while(cnt--)
-        {
-            error=ptrSPI->Transaction(msg,2);
-            if (error==0)
-            {
-                answer=ptrSPI->RecData();
-                if (answer==0)
-                {
+        std::vector<unsigned char> msg, answer;
+        msg.push_back(0x00);
+        msg.push_back(Status ? 0x01 : 0x00);
+        while(cnt--) {
+            cout<<"prepared "<<cnt<<"\n";
+            error=ptrSPI.transaction(msg);
+            if (error==0) {
+                answer=ptrSPI.recData();
+                if (answer.size()==1) {
+                    //if answer
                     return 0;
                 }
-                if (answer!=0&&cnt==0)
-                {
+                else if (cnt==0) {
                     return 1;
                 }
             }
-            if (error!=0&&cnt==0)
-            {
+            else if (cnt==0) {
                 return 1;
             }
         }
-
-    }*/
-
-    /*unsigned int CheckStatus()
+    }
+    uint16_t CheckStatus()
     {
-        unsigned int cnt=3;
-        unsigned char msg[4],*answer;
-        unsigned int error;
-        msg[0]=0x03;
-        msg[1]=0x00;
-        msg[2]=0x01;
-        while(cnt--)
-        {
-            error=this->ptrSPI->Transaction(msg,3);
-            if (error==0)
-            {
-                answer = this->ptrSPI->RecData();
-                if (answer==0)
-                {
+        SPI & ptrSPI=SPI::getInstance();
+        uint16_t cnt=this->WrongTransactions;
+        uint16_t error;
+        std::vector<unsigned char> msg, answer;
+        msg.push_back(0x01);
+        while(cnt--) {
+            cout<<"prepared status "<<cnt<<"\n";
+            error=ptrSPI.transaction(msg);
+            if (error==0) {
+                answer = ptrSPI.recData();
+                if (answer.size()==2) {
+                    //if answer
                     return 0;
                 }
-                if (answer!=0&&cnt==0)
-                {
+                else if (cnt==0) {
                     return 1;
                 }
             }
-            if (error!=0&&cnt==0)
-            {
+            else if (cnt==0) {
                 return 1;
             }
         }
-    }*/
+    }
     void RenewAll(void );
     void SetSubroutine(unsigned char Routine);
     void SetConnector(void );
-    void SetMaxVoltage(void );
+    uint16_t SetMaxVoltage(uint16_t BlueButton, uint16_t YellowButton)
+    {
+        SPI & ptrSPI=SPI::getInstance();
+        uint16_t cnt=this->WrongTransactions;
+        uint16_t error;
+        std::vector<unsigned char> msg, answer;
+        msg.push_back(0x05);
+        msg.push_back((BlueButton&0xff));
+        msg.push_back((BlueButton>>8));
+        msg.push_back(YellowButton&0xff);
+        msg.push_back((YellowButton>>8));
+        while(cnt--) {
+            cout<<"prepared "<<cnt<<"\n";
+            error=ptrSPI.transaction(msg);
+            if (error==0) {
+                answer=ptrSPI.recData();
+                if (answer.size()==1) {
+                    //if answer
+                    return 0;
+                }
+                else if (cnt==0) {
+                    return 1;
+                }
+            }
+            else if (cnt==0) {
+                return 1;
+            }
+        }
+    }
     void SetPower(void );
     void SetMaxTime(void );
     void SetAutoStart(void );
@@ -383,22 +405,21 @@ protected:
 int main(void)
 {
     std::string filename="/dev/ttyUSB0";
-    SPI & test = SPI::instance();
-    MCU & mcu = MCU::initInstance();
-    test.begin(filename);
-    //std::string value= "12354";
+    //SPI & test =SPI::getInstance();
+    MCU mcu(filename);
+    MCU mcu2(filename);
+    //test.begin(filename);
     std::vector<unsigned char> data;
     std::vector<unsigned char> received;
     unsigned char value= 1;
     data.push_back( value);
-    /*std::transform(value.begin(), value.end(), data.begin(),
-                   [](char c)
-                   {
-                       return static_cast<unsigned char>(c);
-                   });*/
-    /*cout<<"Here works0";
-    test.transaction(data);
-    received=test.recData();
-    cout<<received.size();*/
+    cout<<"Here works0";
+    //test.transaction(data);
+    //received=test.recData();
+    //cout<<received.size()<<"\n";
+    mcu.SetStanby(1);
+    mcu.CheckStatus();
+    mcu2.SetStanby(1);
+    mcu2.CheckStatus();
     return 1;
 }
