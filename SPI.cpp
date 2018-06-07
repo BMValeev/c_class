@@ -33,6 +33,14 @@ using namespace std;
 #define
 #define
 */
+#define INVALID_DATA 0x03
+#define TR_ERR 0x05
+#define ACK 0x06
+#define NACK 0x015
+#define BOF 0x20
+#define MSP 0x21
+#define OK 0x00
+#define NOK 0x01
 class SPI
 {
     static SPI * theOneTrueInstance;
@@ -47,17 +55,16 @@ private:
     std::string DeviceName;
     int init=0;
     /*Unsafe Methods*/
-    /*int SendRaw(unsigned char *buffer, unsigned int len) //original
+    int SendRaw_new(unsigned char *buffer, unsigned int len) //original
     {
         struct spi_ioc_transfer spi[len];
-        int i = 0;
         int retVal = -1;
         unsigned char garbage[len];
-        for (i = 0 ; i < len ; i++){
+        for (int i = 0 ; i < len ; i++){
 
-            spi[i].tx_buf        = (unsigned long)(buffer + i); // transmit from "data"
-            spi[i].rx_buf        = (unsigned long)(garbage + i) ; // receive into "data"
-            spi[i].len           = sizeof(*(buffer + i)) ;
+            spi[i].tx_buf        = (unsigned char)(buffer + i); // transmit from "data"
+            spi[i].rx_buf        = (unsigned char)(garbage + i) ; // receive into "data"
+            spi[i].len           = sizeof(unsigned char) ;
             spi[i].delay_usecs   = 0 ;
             spi[i].speed_hz      = this->speed ;
             spi[i].bits_per_word = this->bitsPerWord ;
@@ -66,45 +73,44 @@ private:
         retVal = ioctl (this->spifd, SPI_IOC_MESSAGE(len), &spi) ;
         if(retVal < 0)
         {
-
-            perror("Problem transmitting spi data..ioctl");
-            return 1;
+            cout<<"Problem transmitting spi data..ioctl";
+            return NOK;
         }
-
-        return retVal;
+        return OK;
     }
-    int ReceiveRaw(void) //Need to check original
+    int ReceiveRaw_new(void) //Need to check original
     {
         struct spi_ioc_transfer spi_start[1];
         unsigned char garbage[this->LastRecMsg.size()];
         unsigned char * buffer;
+        int i=0;
         buffer=this->LastRecMsg.data();
         unsigned char TmpLen=this->LastRecMsg.size();
-        int i = 0;
         int retVal = -1;
-        for(i=0;i<TmpLen;i++)
+        /*for(int i=0;i<TmpLen;i++) //Check that data will be send as zero string explicitly
         {
             garbage[i]='\0';
-        }
-        spi_start[0].tx_buf        = (unsigned long)(garbage); // transmit from "data"
-        spi_start[0].rx_buf        = (unsigned long)(buffer) ; // receive into "data"
+        }*/
+        spi_start[0].tx_buf        = (unsigned char)(garbage); // transmit from "data"
+        spi_start[0].rx_buf        = (unsigned char)(buffer) ; // receive into "data"
         spi_start[0].len           = sizeof(unsigned char) ;
         spi_start[0].delay_usecs   = 0 ;
         spi_start[0].speed_hz      = this->speed ;
         spi_start[0].bits_per_word = this->bitsPerWord ;
         spi_start[0].cs_change = 0;
         retVal = ioctl (this->spifd, SPI_IOC_MESSAGE(1), &spi_start) ;
-        TmpLen=LastRecMsg[0];
+        TmpLen=this->LastRecMsg.front();
         if (TmpLen==0)
         {
-            return 1;
+            cout<<"Problem receiving spi data..ioctl";
+            return NOK;
         }
         TmpLen--;
         struct spi_ioc_transfer spi_all[TmpLen];
         for(i=0;i<TmpLen;i++)
         {
-            spi_all[i].tx_buf        = (unsigned long)(garbage+i); // transmit from "data"
-            spi_all[i].rx_buf        = (unsigned long)(buffer+i+1) ; // receive into "data"
+            spi_all[i].tx_buf        = (unsigned char)(garbage+i); // transmit from "data"
+            spi_all[i].rx_buf        = (unsigned char)(buffer+i+1) ; // receive into "data"
             spi_all[i].len           = sizeof(unsigned char) ;
             spi_all[i].delay_usecs   = 0 ;
             spi_all[i].speed_hz      = this->speed ;
@@ -112,14 +118,12 @@ private:
             spi_all[i].cs_change = 0;
             retVal = ioctl (this->spifd, SPI_IOC_MESSAGE(TmpLen), &spi_all) ;
         }
-//        this->MsgLen=TmpLen;
         if(retVal < 0){
-            perror("Problem receiving spi data..ioctl");
-            return 1;
+            cout<<"Problem receiving spi data..ioctl";
+            return NOK;
         }
-
-        return retVal;
-    }*/
+        return OK;
+    }
     int SendRaw(unsigned char *buffer, unsigned int len)
     {
         return 0;
@@ -308,38 +312,17 @@ public:
         ptrSPI.begin(filename);
     }
     ~MCU(){}
+
     uint16_t SetStanby(uint16_t Status)
     {
-        SPI & ptrSPI=SPI::getInstance();
-        unsigned int cnt=this->WrongTransactions;
-        unsigned int error;
-        std::vector<unsigned char> msg, answer;
-        msg.push_back(0x00);
-        msg.push_back(Status ? 0x01 : 0x00);
-        while(cnt--) {
-            cout<<"prepared "<<cnt<<"\n";
-            error=ptrSPI.transaction(msg);
-            if (error==0) {
-                answer=ptrSPI.recData();
-                if (answer.size()==1) {
-                    //if answer
-                    return 0;
-                }
-                else if (cnt==0) {
-                    return 1;
-                }
-            }
-            else if (cnt==0) {
-                return 1;
-            }
-        }
+        return SendBool(0x00, Status);
     }
-    uint16_t CheckStatus()
+    std::vector<unsigned char> CheckStatus(void)
     {
         SPI & ptrSPI=SPI::getInstance();
         uint16_t cnt=this->WrongTransactions;
         uint16_t error;
-        std::vector<unsigned char> msg, answer;
+        std::vector<unsigned char> msg, answer,null;
         msg.push_back(0x01);
         while(cnt--) {
             cout<<"prepared status "<<cnt<<"\n";
@@ -347,60 +330,145 @@ public:
             if (error==0) {
                 answer = ptrSPI.recData();
                 if (answer.size()==2) {
-                    //if answer
-                    return 0;
+                    return answer;
                 }
                 else if (cnt==0) {
-                    return 1;
+                    return null;
                 }
             }
             else if (cnt==0) {
-                return 1;
+                return null;
             }
         }
     }
     void RenewAll(void );
-    void SetSubroutine(unsigned char Routine);
-    void SetConnector(void );
+    uint16_t SetSubroutine(unsigned char Routine)
+    {
+        return SendInt(0x00, Routine);
+    }
+    uint16_t SetConnector(uint16_t  Connector)
+    {
+        return SendInt(0x00, Connector);
+    }
     uint16_t SetMaxVoltage(uint16_t BlueButton, uint16_t YellowButton)
     {
+        return SendDoubleInt(0x00, BlueButton,YellowButton);
+    }
+    uint16_t SetPower(uint16_t BlueButton, uint16_t YellowButton)
+    {
+        return SendDoubleInt(0x00, BlueButton,YellowButton);
+    }
+    uint16_t SetMaxTime(uint16_t MaxTime )
+    {
+        return SendBool(0x00, MaxTime);
+    }
+    uint16_t SetAutoStart(uint8_t Enabled )
+    {
+        return SendBool(0x00, Enabled);
+    }
+    uint16_t SetAutoStartDelay(uint16_t DelayTime )
+    {
+        return SendInt(0x00, DelayTime);
+    }
+    uint16_t SetAutoStop(uint8_t Enabled )
+    {
+        return SendInt(0x00, Enabled);
+    }
+    uint16_t SetAutoStopResistance(uint16_t Resistance )
+    {
+        return SendInt(0x00, Resistance);
+    }
+    uint16_t SetIrrigation(uint8_t Enabled )
+    {
+        return SendBool(0x00, Enabled);
+    }
+    uint16_t SetModulation(uint16_t Frequency )
+    {
+        return SendInt(0x00, Frequency);
+    }
+    uint16_t SetDutyRate(uint16_t CrestFactor )
+    {
+        return SendInt(0x00, CrestFactor);
+    }
+protected:
+    uint16_t SendBool(uint8_t command,uint16_t value)
+    {
         SPI & ptrSPI=SPI::getInstance();
-        uint16_t cnt=this->WrongTransactions;
-        uint16_t error;
+        unsigned int cnt=this->WrongTransactions;
+        unsigned int error;
         std::vector<unsigned char> msg, answer;
-        msg.push_back(0x05);
-        msg.push_back((BlueButton&0xff));
-        msg.push_back((BlueButton>>8));
-        msg.push_back(YellowButton&0xff);
-        msg.push_back((YellowButton>>8));
+        msg.push_back(command);
+        msg.push_back(value ? 0x01 : 0x00);
         while(cnt--) {
             cout<<"prepared "<<cnt<<"\n";
             error=ptrSPI.transaction(msg);
             if (error==0) {
                 answer=ptrSPI.recData();
                 if (answer.size()==1) {
-                    //if answer
-                    return 0;
+                    return answer.front()==ACK? ACK:NACK;
                 }
                 else if (cnt==0) {
-                    return 1;
+                    return TR_ERR;
                 }
             }
             else if (cnt==0) {
-                return 1;
+                return TR_ERR;
             }
         }
     }
-    void SetPower(void );
-    void SetMaxTime(void );
-    void SetAutoStart(void );
-    void SetAutoStartDelay(void );
-    void SetAutoStop(void );
-    void SetAutoStopResistance(void );
-    void SetIrrigation(void );
-    void SetModulation(void );
-    void SetDutyRate(void );
-protected:
+    uint16_t SendInt(uint8_t command,uint16_t value)
+    {
+        SPI & ptrSPI=SPI::getInstance();
+        unsigned int cnt=this->WrongTransactions;
+        unsigned int error;
+        std::vector<unsigned char> msg, answer;
+        msg.push_back(command);
+        msg.push_back(uint8_t(value&0xff));
+        while(cnt--) {
+            cout<<"prepared "<<cnt<<"\n";
+            error=ptrSPI.transaction(msg);
+            if (error==0) {
+                answer=ptrSPI.recData();
+                if (answer.size()==1) {
+                    return answer.front()==ACK? ACK:NACK;
+                }
+                else if (cnt==0) {
+                    return TR_ERR;
+                }
+            }
+            else if (cnt==0) {
+                return TR_ERR;
+            }
+        }
+    }
+    uint16_t SendDoubleInt(uint8_t command,uint16_t value1,uint16_t value2)
+    {
+        SPI & ptrSPI=SPI::getInstance();
+        uint16_t cnt=this->WrongTransactions;
+        uint16_t error;
+        std::vector<unsigned char> msg, answer;
+        msg.push_back(command);
+        msg.push_back((value1&0xff));
+        msg.push_back((value1>>8));
+        msg.push_back(value2&0xff);
+        msg.push_back((value2>>8));
+        while(cnt--) {
+            cout<<"prepared "<<cnt<<"\n";
+            error=ptrSPI.transaction(msg);
+            if (error==0) {
+                answer=ptrSPI.recData();
+                if (answer.size()==1) {
+                    return answer.front()==ACK? ACK:NACK;
+                }
+                else if (cnt==0) {
+                    return TR_ERR;
+                }
+            }
+            else if (cnt==0) {
+                return TR_ERR;
+            }
+        }
+    }
 };
 int main(void)
 {
