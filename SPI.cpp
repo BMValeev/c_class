@@ -18,6 +18,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <cstring>
 using namespace std;
 #define MUTEX_BLOCKED 127
 /*#define
@@ -56,84 +57,96 @@ private:
     std::string DeviceName;
     int init=0;
     /*Unsafe Methods*/
-    /*int SendRaw_new(unsigned char *buffer, unsigned int len) //original
+    int SendRaw_new(unsigned char *buffer, unsigned int len) //original
     {
-        struct spi_ioc_transfer spi[len];
-        uint8_t tx[] = {
-                0xFF, 0xFF, 0xFF, 0xFF, 0xFF
-        };
-        int retVal = -1;
-        unsigned char garbage[len];*/
-        /*for (int i = 0 ; i < len ; i++){
-
-            spi[i].tx_buf        = (unsigned char )(tx + i); // transmit from "data"
-            spi[i].rx_buf        = (unsigned char )(garbage + i) ; // receive into "data"
-            spi[i].len           = sizeof(unsigned char) ;
-            spi[i].delay_usecs   = 0 ;
-            spi[i].speed_hz      = this->speed ;
-            spi[i].bits_per_word = this->bitsPerWord ;
-            spi[i].cs_change = 0;
-        }*/
-
-        /*struct spi_ioc_transfer send;
+        /*struct spi_ioc_transfer spi[len];
+        uint8_t tx[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};*/
+        int retVal = 0;
+        printf("%d",len);
+        unsigned char garbage[len];
+        struct spi_ioc_transfer send;
         send.tx_buf = (unsigned long)buffer;
         send.rx_buf = (unsigned long)garbage;
-        send.len = ARRAY_SIZE(tx);
-        send.delay_usecs = 10;
+        send.len = ARRAY_SIZE(buffer);
+        send.delay_usecs = 0;
         send.speed_hz = this->speed;
         send.bits_per_word = this->bitsPerWord;
         send.cs_change = 0;
-        retVal= ioctl (this->spifd, ARRAY_SIZE(tx), &send);
-        //retVal= ioctl (this->spifd, SPI_IOC_MESSAGE(len), &send) ;
+        retVal= ioctl (this->spifd, SPI_IOC_MESSAGE(1), &send);
         if(retVal < 0)
         {
-            cout<<"Problem transmitting spi data..ioctl";
+            printf("ioctl failed and returned errno %s \n",strerror(errno));
             return NOK;
         }
+        for (unsigned int tst = 0; tst < len; tst++) {
+            if (!(tst % 6))
+                puts("");
+            printf("%.2X ", buffer[tst]);
+        }
+        puts("");
         return OK;
-    }*/
-    /*int ReceiveRaw_new(void) //Need to check original
+    }
+    int ReceiveRaw_new(void) //Need to check original
     {
-        struct spi_ioc_transfer spi_start[1];
-        unsigned char garbage[this->LastRecMsg.size()];
-        unsigned char * buffer;
-        int i=0;
-        buffer=this->LastRecMsg.data();
-        unsigned char TmpLen=this->LastRecMsg.size();
-        int retVal = -1;
-        spi_start[0].tx_buf        = (unsigned char)(garbage); // transmit from "data"
-        spi_start[0].rx_buf        = (unsigned char)(buffer) ; // receive into "data"
-        spi_start[0].len           = sizeof(unsigned char) ;
-        spi_start[0].delay_usecs   = 0 ;
-        spi_start[0].speed_hz      = this->speed ;
-        spi_start[0].bits_per_word = this->bitsPerWord ;
-        spi_start[0].cs_change = 0;
-        retVal = ioctl (this->spifd, SPI_IOC_MESSAGE(1), &spi_start) ;
-        TmpLen=this->LastRecMsg.front();
+        unsigned char garbage[5]={0x03,0x01,0xEA,0x00,0x00};
+        unsigned char buffer[5]={0x03,0x01,0x00,0x00,0x01};
+        unsigned char test[1]={0x00};
+        unsigned char TmpLen;
+        int retVal = 0;
+        struct spi_ioc_transfer send;
+        send.tx_buf = (unsigned long)garbage;
+        send.rx_buf = (unsigned long)buffer;
+        send.len = ARRAY_SIZE(test);
+        send.delay_usecs = 1;
+        send.speed_hz = this->speed;
+        send.bits_per_word = this->bitsPerWord;
+        send.cs_change = 0;
+        cout<<"Here works24\n";
+
+        retVal= ioctl (this->spifd, SPI_IOC_MESSAGE(1), &send);
+        if(retVal < 0)
+        {
+            printf("ioctl failed and returned errno %s \n",strerror(errno));
+            return NOK;
+        }
+        for (retVal = 0; retVal < 1; retVal++) {
+            if (!(retVal % 6))
+                puts("");
+            printf("%.2X ", buffer[retVal]);
+        }
+        TmpLen=buffer[0];
+        printf("%d",TmpLen);
         if (TmpLen==0)
         {
             cout<<"Problem receiving spi data..ioctl";
             return NOK;
         }
-        TmpLen--;
-        struct spi_ioc_transfer spi_all[TmpLen];
-        for(i=0;i<TmpLen;i++)
+        cout<<"Here works25\n";
+        TmpLen=TmpLen-1;
+        struct spi_ioc_transfer spi_all;
+        spi_all.tx_buf = (unsigned long) &garbage[1];
+        spi_all.rx_buf = (unsigned long) &buffer[1];
+        spi_all.len = TmpLen*ARRAY_SIZE(test);
+        spi_all.delay_usecs = 10;
+        spi_all.speed_hz = this->speed;
+        spi_all.bits_per_word = this->bitsPerWord;
+        spi_all.cs_change = 0;
+        retVal = ioctl (this->spifd, SPI_IOC_MESSAGE(1), &spi_all) ;
+        cout<<"Here works26\n";;
+        if(retVal < 0)
         {
-            spi_all[i].tx_buf        = (unsigned char)(garbage+i); // transmit from "data"
-            spi_all[i].rx_buf        = (unsigned char)(buffer+i+1) ; // receive into "data"
-            spi_all[i].len           = sizeof(unsigned char) ;
-            spi_all[i].delay_usecs   = 0 ;
-            spi_all[i].speed_hz      = this->speed ;
-            spi_all[i].bits_per_word = this->bitsPerWord ;
-            spi_all[i].cs_change = 0;
-            retVal = ioctl (this->spifd, SPI_IOC_MESSAGE(TmpLen), &spi_all) ;
-        }
-        if(retVal < 0){
-            cout<<"Problem receiving spi data..ioctl";
+            printf("ioctl failed and returned errno %s \n",strerror(errno));
             return NOK;
         }
+        CleanRecMsg();
+        for (retVal = 0; retVal < (TmpLen+1); retVal++) {
+            if (!(retVal % 6))
+                puts("");
+            printf("%.2X ", buffer[retVal]);
+            this->LastRecMsg.push_back(buffer[retVal]);
+        }
         return OK;
-    }*/
+    }
     int SendRaw(unsigned char *buffer, unsigned int len)
     {
         return 0;
@@ -182,23 +195,25 @@ private:
         temp=Buffer.data();
         unsigned char Result[FullLen];
         Result[0]=FullLen;
-        for(int i=0;i<Buffer.size();i++)
+        cout<<this->spifd<<"\n";
+        for(unsigned int i=0;i<Buffer.size();i++)
         {
             Result[i+1]=temp[i];
         }
         Result[FullLen-1]=CRC8(Result,FullLen-1);
-        if(SendRaw(Result, FullLen))
+        if(SendRaw_new(Result, FullLen))
         {
             return 1;
         }
-        //cout<<Result;
         cout<<"Here works1\n";
         return 0;
     }
     int ReceivePacket(void)
     {
+        cout<<"Here works21\n";
         CleanRecMsg();
-        if(ReceiveRaw())
+        cout<<this->spifd<<"\n";
+        if(ReceiveRaw_new())
         {
             return 1;
         }
@@ -220,21 +235,21 @@ public:
     int begin(std::string device)/*Need to check*/
     {
         this->Mutex=1;
-        if (this->init==1)
+        /*if (this->init==1)
         {
             cout<<"everything initialized";
             this->Mutex=0;
             return 1;
-        }
-        this->init=1;
+        }*/
+
         CleanRecMsg();
         SetDeviceName(device);
         int statusVal = -1;
-        /*this->mode = SPI_MODE_0 ;
+        this->mode = SPI_MODE_0 ;
         this->bitsPerWord = 8;
-        this->speed = 1000000;
+        this->speed = 100000;
         this->spifd = -1;
-        this->spifd = open(DeviceName.c_str(), O_RDWR);
+        this->spifd = open(this->DeviceName.c_str(), O_RDWR);
         if(this->spifd < 0){
             perror("could not open SPI device");
         }
@@ -261,12 +276,14 @@ public:
         statusVal = ioctl (this->spifd, SPI_IOC_RD_MAX_SPEED_HZ, &(this->speed));
         if(statusVal < 0) {
             perror("Could not set SPI speed (RD)...ioctl fail");
-        }*/
+        }
+        this->init=1;
         this->Mutex=0;
+        return 0;
     }
     unsigned int transaction(std::vector<unsigned char> buffer) /*Need to check*/
     {
-        unsigned int status=0;
+        //unsigned int status=0;
         if(this->Mutex)
         {
             return 1;
@@ -282,8 +299,9 @@ public:
             this->Mutex=0;
             return 1;
         }
-        usleep(100000);
+        usleep(200000);
         cout<<"Here works2\n";
+
         if (ReceivePacket())
         {
             this->Mutex=0;
@@ -350,6 +368,7 @@ public:
                 return null;
             }
         }
+        return answer;
     }
     void RenewAll(void );
     uint16_t SetSubroutine(unsigned char Routine)
@@ -425,6 +444,7 @@ protected:
                 return TR_ERR;
             }
         }
+        return answer.front()==ACK? ACK:NACK;
     }
     uint16_t SendInt(uint8_t command,uint16_t value)
     {
@@ -482,22 +502,17 @@ protected:
 };
 int main(void)
 {
-    std::string filename="/dev/ttyUSB0";
+    std::string filename="/dev/spidev1.0";
     //SPI & test =SPI::getInstance();
     MCU mcu(filename);
-    MCU mcu2(filename);
+    //MCU mcu2(filename);
     //test.begin(filename);
     std::vector<unsigned char> data;
     std::vector<unsigned char> received;
     unsigned char value= 1;
     data.push_back( value);
     cout<<"Here works0";
-    //test.transaction(data);
-    //received=test.recData();
-    //cout<<received.size()<<"\n";
     mcu.SetStanby(1);
     mcu.CheckStatus();
-    mcu2.SetStanby(1);
-    mcu2.CheckStatus();
     return 1;
 }
