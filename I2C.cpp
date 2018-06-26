@@ -50,7 +50,7 @@ private:
     std::string DeviceName;
     struct i2c_client *i2c_data;
     /*Unsafe Methods*/
-    int SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned char> buffer, unsigned int r_ len)
+    int SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned char> buffer, unsigned int rlen)
     {
         struct i2c_client *client = this->i2c_data;
         struct i2c_msg msgs[2];

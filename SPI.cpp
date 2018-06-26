@@ -18,7 +18,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
-#include <cstring>
+#include <SPI.h>
 using namespace std;
 #define MUTEX_BLOCKED 127
 /*#define
