@@ -666,7 +666,7 @@ public:
         unsigned int error;
         std::vector<unsigned char> msg, answer;
         msg.push_back(0x01);
-        msg.push_back(volume[i]);
+        msg.push_back(volume);
         while(cnt--) {
             cout<<"prepared "<<cnt<<"\n";
             error=ptrI2C.transaction(this->addr,msg,3);

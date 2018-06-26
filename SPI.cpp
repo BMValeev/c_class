@@ -41,6 +41,7 @@ using namespace std;
 #define MSP 0x21
 #define OK 0x00
 #define NOK 0x01
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 class SPI
 {
     static SPI * theOneTrueInstance;
@@ -55,30 +56,43 @@ private:
     std::string DeviceName;
     int init=0;
     /*Unsafe Methods*/
-    int SendRaw_new(unsigned char *buffer, unsigned int len) //original
+    /*int SendRaw_new(unsigned char *buffer, unsigned int len) //original
     {
         struct spi_ioc_transfer spi[len];
+        uint8_t tx[] = {
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF
+        };
         int retVal = -1;
-        unsigned char garbage[len];
-        for (int i = 0 ; i < len ; i++){
+        unsigned char garbage[len];*/
+        /*for (int i = 0 ; i < len ; i++){
 
-            spi[i].tx_buf        = (unsigned char)(buffer + i); // transmit from "data"
-            spi[i].rx_buf        = (unsigned char)(garbage + i) ; // receive into "data"
+            spi[i].tx_buf        = (unsigned char )(tx + i); // transmit from "data"
+            spi[i].rx_buf        = (unsigned char )(garbage + i) ; // receive into "data"
             spi[i].len           = sizeof(unsigned char) ;
             spi[i].delay_usecs   = 0 ;
             spi[i].speed_hz      = this->speed ;
             spi[i].bits_per_word = this->bitsPerWord ;
             spi[i].cs_change = 0;
-        }
-        retVal = ioctl (this->spifd, SPI_IOC_MESSAGE(len), &spi) ;
+        }*/
+
+        /*struct spi_ioc_transfer send;
+        send.tx_buf = (unsigned long)buffer;
+        send.rx_buf = (unsigned long)garbage;
+        send.len = ARRAY_SIZE(tx);
+        send.delay_usecs = 10;
+        send.speed_hz = this->speed;
+        send.bits_per_word = this->bitsPerWord;
+        send.cs_change = 0;
+        retVal= ioctl (this->spifd, ARRAY_SIZE(tx), &send);
+        //retVal= ioctl (this->spifd, SPI_IOC_MESSAGE(len), &send) ;
         if(retVal < 0)
         {
             cout<<"Problem transmitting spi data..ioctl";
             return NOK;
         }
         return OK;
-    }
-    int ReceiveRaw_new(void) //Need to check original
+    }*/
+    /*int ReceiveRaw_new(void) //Need to check original
     {
         struct spi_ioc_transfer spi_start[1];
         unsigned char garbage[this->LastRecMsg.size()];
@@ -87,10 +101,6 @@ private:
         buffer=this->LastRecMsg.data();
         unsigned char TmpLen=this->LastRecMsg.size();
         int retVal = -1;
-        /*for(int i=0;i<TmpLen;i++) //Check that data will be send as zero string explicitly
-        {
-            garbage[i]='\0';
-        }*/
         spi_start[0].tx_buf        = (unsigned char)(garbage); // transmit from "data"
         spi_start[0].rx_buf        = (unsigned char)(buffer) ; // receive into "data"
         spi_start[0].len           = sizeof(unsigned char) ;
@@ -123,7 +133,7 @@ private:
             return NOK;
         }
         return OK;
-    }
+    }*/
     int SendRaw(unsigned char *buffer, unsigned int len)
     {
         return 0;
