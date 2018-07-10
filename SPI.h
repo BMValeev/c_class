@@ -1,19 +1,25 @@
 /*
- *
- *
- *
- *
- *
  *Created by eleps on 27.04.18.
- */
+*/
+#ifndef C_CLASS_SPI_H
+#define C_CLASS_SPI_H
+
+using namespace std;
+#include <unistd.h>
+#include <stdint.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <linux/spi/spidev.h>
+#include <stdio.h>
+#include <errno.h>
+#include <stdlib.h>
 #include <string>
+#include <cstring>
 #include <iostream>
 #include <vector>
 #include <algorithm>
-#include <cstring>
-using namespace std;
-#ifndef C_CLASS_SPI_H
-#define C_CLASS_SPI_H
+
+// Low level class that implements basic information exchange via SPI on Hamming board
 class SPI
 {
 public:
@@ -23,7 +29,12 @@ public:
     unsigned int transaction(std::vector<unsigned char> buffer);
     std::vector<unsigned char> recData(void);
 
+protected:
+    SPI();
+    virtual ~SPI();
+
 private:
+    static SPI* theOneTrueInstance;
     std::vector<unsigned char> LastRecMsg;
     int Mutex;
     int NewData;
@@ -32,7 +43,7 @@ private:
     unsigned char bitsPerWord;
     unsigned int speed;
     std::string DeviceName;
-    int init;
+    int init=0;
     int SendRaw_new(unsigned char *buffer, unsigned int len);
     int ReceiveRaw_new(void);
     int SendRaw(unsigned char *buffer, unsigned int len);
@@ -42,12 +53,19 @@ private:
     unsigned char CRC8(unsigned char *buffer, unsigned int len);
     int SendPacket(std::vector<unsigned char> Buffer);
     int ReceivePacket(void);
-
-
-protected:
-    SPI();
-    virtual ~SPI();
 };
+
+#define MUTEX_BLOCKED 127
+#define INVALID_DATA 0x03
+#define TR_ERR 0x05
+#define ACK 0x06
+#define NACK 0x015
+#define BOF 0x20
+#define MSP 0x21
+#define OK 0x00
+#define NOK 0x01
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+
 class MCU
 {
 public:
@@ -68,13 +86,15 @@ public:
     uint16_t SetIrrigation(uint8_t Enabled );
     uint16_t SetModulation(uint16_t Frequency );
     uint16_t SetDutyRate(uint16_t CrestFactor );
+
 private:
-    uint16_t WrongTransactions;
+    uint16_t WrongTransactions=3;
+
 protected:
     uint16_t SendBool(uint8_t command,uint16_t value);
     uint16_t SendInt(uint8_t command,uint16_t value);
     uint16_t SendDoubleInt(uint8_t command,uint16_t value1,uint16_t value2);
-}:
+};
 
 #endif //C_CLASS_SPI_H
 
