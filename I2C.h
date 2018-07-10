@@ -1,13 +1,10 @@
 /*
- *
- *
- *
- *
- *
  *Created by eleps on 27.04.18.
  */
 #ifndef C_CLASS_I2C_H
 #define C_CLASS_I2C_H
+
+using namespace std;
 #include <unistd.h>
 #include <stdint.h>
 #include <fcntl.h>
@@ -22,20 +19,37 @@
 #include <sys/stat.h>
 #include <linux/i2c.h>
 #include <vector>
-using namespace std;
-#ifndef C_CLASS_SPI_H
-#define C_CLASS_SPI_H
+
+#define MUTEX_BLOCKED 127
+#define INVALID_DATA 0x03
+#define TR_ERR 0x05
+#define ACK 0x06
+#define NACK 0x015
+#define BOF 0x20
+#define MSP 0x21
+
 class I2C
 {
-    static I2C * theOneTrueInstance;
+public:
+    static I2C & getInstance();
+    static void initInstance();
+    unsigned int begin(std::string device, struct i2c_client *client);
+    unsigned int transaction(std::vector<unsigned char> address,std::vector<unsigned char> buffer, unsigned int len);
+    std::vector<unsigned char> recData(void);
+
+protected:
+    I2C();
+    virtual ~I2C();
+
 private:
-    const unsigned int MaxLen;
+    static I2C * theOneTrueInstance;
+    const unsigned int MaxLen=40;
     unsigned int MsgLen;
     std::vector<unsigned char>  LastRecMsg;
     int Mutex;
     int NewData;
     int i2cfd;
-    int init;
+    int init=0;
     std::string DeviceName;
     struct i2c_client *i2c_data;
     /*Unsafe Methods*/
@@ -46,39 +60,10 @@ private:
     /*Safe functions*/
     unsigned char CRC8(unsigned char *buffer, unsigned int len);
     int SendPacket(std::vector<unsigned char> address,std::vector<unsigned char> buffer, unsigned int len);
-public:
-    static I2C & getInstance();
-    static void initInstance();
-    unsigned int begin(std::string device, i2c_client *client);
-    unsigned int transaction(std::vector<unsigned char> address,std::vector<unsigned char> buffer, unsigned int len);
-    std::vector<unsigned char> recData(void);
-protected:
-    I2C();
-    virtual ~I2C();
 };
-class BoardModule
-{
-private:
-    uint16_t WrongTransactions=3;
-    std::vector<unsigned char> addr;
 
-public:
-    std::vector<unsigned char>getAddress(void);
-    std::vector<unsigned char> setAddress(std::vector<unsigned char>addr);
-    BoardModule(std::string filename,struct i2c_client *client) ;
-    ~BoardModule()
-    std::vector<unsigned char> GetVersion(void);
-    std::vector<unsigned char> GetTools(void);
-    std::vector<unsigned char> GetPower(void);
-    unsigned int SetEnergy(unsigned char energy);
-    unsigned int SetVolume(unsigned char volume);
-
-};
 class ConnModule
 {
-private:
-    uint16_t WrongTransactions;
-    std::vector<unsigned char> addr;
 public:
     std::vector<unsigned char>getAddress(void);
     std::vector<unsigned char> setAddress(std::vector<unsigned char>addr);
@@ -94,6 +79,28 @@ public:
     std::vector<unsigned char> ReadLastChangedValue(void); /*change order of message*/
     unsigned int StartBonding(std::vector<unsigned char> db);
     std::vector<unsigned char> CheckBonding(std::vector<unsigned char> data);
-protected:
+
+private:
+    uint16_t WrongTransactions=3;
+    std::vector<unsigned char> addr;
 };
+
+class BoardModule
+{
+public:
+    std::vector<unsigned char>getAddress(void);
+    void setAddress(std::vector<unsigned char>addr);
+    BoardModule(std::string filename,struct i2c_client *client) ;
+    ~BoardModule();
+    std::vector<unsigned char> GetVersion(void);
+    std::vector<unsigned char> GetTools(void);
+    std::vector<unsigned char> GetPower(void);
+    unsigned int SetEnergy(unsigned char energy);
+    unsigned int SetVolume(unsigned char volume);
+
+private:
+    uint16_t WrongTransactions=3;
+    std::vector<unsigned char> addr;
+};
+
 #endif //C_CLASS_I2C_H

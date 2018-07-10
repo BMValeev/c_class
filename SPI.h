@@ -19,13 +19,24 @@ using namespace std;
 #include <vector>
 #include <algorithm>
 
+#define MUTEX_BLOCKED 127
+#define INVALID_DATA 0x03
+#define TR_ERR 0x05
+#define ACK 0x06
+#define NACK 0x015
+#define BOF 0x20
+#define MSP 0x21
+#define OK 0x00
+#define NOK 0x01
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+
 // Low level class that implements basic information exchange via SPI on Hamming board
 class SPI
 {
 public:
-    int begin(std::string device);
-    static void initInstance();
     static SPI & getInstance();
+    static void initInstance();
+    int begin(std::string device);
     unsigned int transaction(std::vector<unsigned char> buffer);
     std::vector<unsigned char> recData(void);
 
@@ -54,17 +65,6 @@ private:
     int SendPacket(std::vector<unsigned char> Buffer);
     int ReceivePacket(void);
 };
-
-#define MUTEX_BLOCKED 127
-#define INVALID_DATA 0x03
-#define TR_ERR 0x05
-#define ACK 0x06
-#define NACK 0x015
-#define BOF 0x20
-#define MSP 0x21
-#define OK 0x00
-#define NOK 0x01
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
 class MCU
 {
