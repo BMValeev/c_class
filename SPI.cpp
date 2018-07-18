@@ -100,6 +100,7 @@ uint8_t SPI::transaction(std::vector<unsigned char> buffer, uint8_t ans_len) /*N
     }
     if(CRC8(this->LastRecMsg.data(),this->LastRecMsg.size()))
     {
+        this->Mutex=0;
         PrintLog(Warning_log,(std::string) __func__+  (std::string)": CRC error\n");
         return NOK;
     }
@@ -110,15 +111,11 @@ uint8_t SPI::transaction(std::vector<unsigned char> buffer, uint8_t ans_len) /*N
 }
 std::vector<unsigned char> SPI::recData(void) /*Need to check*/
 {
-    PrintLog(Debug_log,(std::string) __func__+  (std::string)": Function started\n");
+    //PrintLog(Debug_log,(std::string) __func__+  (std::string)": Function started\n");
     this->NewData=0;
-    PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
+    //PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
     return LastRecMsg;
 
-}
-void SPI::changePrint(void (SPI::*ptrFunc)(uint8_t, std::string))
-{
-    this->ptrPrintLog=ptrFunc;
 }
 /*Unsafe methods*/
 int SPI::SendRaw_new(unsigned char *buffer, unsigned int len, uint8_t ans_len) //original
@@ -254,9 +251,9 @@ void SPI::CleanRecMsg(void)
     /*
              * Explicitly cleans last read buffer
              */
-    PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started\n");
+    //PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started\n");
     this->LastRecMsg.clear();
-    PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
+    //PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
 }
 /*Safe methods*/
 void SPI::PrintLog(uint8_t status, std::string text)
@@ -266,17 +263,17 @@ void SPI::PrintLog(uint8_t status, std::string text)
 unsigned char SPI::CRC8(unsigned char *buffer, unsigned int len)
 {
     unsigned char crc = 0x82;
-    PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started\n");
+    //PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started\n");
     while (len--)
     {
         crc ^= *buffer++;; crc = (crc & 1)? (crc >> 1) ^ 0x8c : crc >> 1;
     }
-    PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
+    //PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
     return crc;
 }
 int SPI::SendPacket(std::vector<unsigned char> Buffer, uint8_t ans_len)
 {
-    PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started\n");
+    //PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started\n");
     unsigned int FullLen;
     unsigned int i=0;
     unsigned char *temp;
@@ -294,7 +291,7 @@ int SPI::SendPacket(std::vector<unsigned char> Buffer, uint8_t ans_len)
         PrintLog(Info_log,(std::string) __func__+  (std::string)"Transmisison error\n");
         return NOK;
     }
-    PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
+    //PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
     return OK;
 }
 /*int SPI::ReceivePacket(void)
@@ -326,12 +323,7 @@ MCU::MCU(std::string filename)
 MCU::~MCU(){
 
 }
-void MCU::changePrint(void (MCU::*ptrFunc)(uint8_t, std::string))
-{
-    SPI & ptrSPI=SPI::getInstance();
-    //ptrSPI.changePrint(&ptrFunc);
-    this->ptrPrintLog=ptrFunc;
-}
+
 void MCU::PrintLog(uint8_t status, std::string text)
 {
     cout<<status<<text<<endl;
@@ -352,12 +344,14 @@ std::vector<unsigned char> MCU::CheckStatus(void)
     msg.push_back(0x01);
     while(cnt--)
     {
+        PrintLog(Debug_log, (std::string) __func__+  (std::string)"Transactions left: "+ std::to_string(cnt) );
         error=ptrSPI.transaction(msg,4);
         if (error==0)
         {
             answer = ptrSPI.recData();
-            if (answer.size()==2)
+            if (answer.size()==3)
             {
+                answer.erase(answer.begin());
                 PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
                 return answer;
             }
@@ -431,7 +425,7 @@ uint8_t MCU::SetDutyRate(uint16_t CrestFactor )
 
 uint8_t MCU::SendBool(uint8_t command,uint16_t value)
 {
-    PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started\n");
+    //PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started\n");
     SPI & ptrSPI=SPI::getInstance();
     unsigned int cnt=this->WrongTransactions;
     unsigned int error;
@@ -440,13 +434,15 @@ uint8_t MCU::SendBool(uint8_t command,uint16_t value)
     msg.push_back(value ? 0x01 : 0x00);
     while(cnt--)
     {
+        PrintLog(Debug_log, (std::string) __func__+  (std::string)"Transactions left: "+ std::to_string(cnt) );
         error=ptrSPI.transaction(msg,3);
         if (error==0)
         {
             answer=ptrSPI.recData();
-            if (answer.size()==1)
+            if (answer.size()==2)
             {
-                PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
+                answer.erase(answer.begin());
+                //PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
                 return answer.front()==(ACK|EXEC)? OK:NOK;
             }
             else if (cnt==0)
@@ -459,7 +455,7 @@ uint8_t MCU::SendBool(uint8_t command,uint16_t value)
 }
 uint8_t MCU::SendInt(uint8_t command,uint16_t value)
 {
-    PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started\n");
+    //PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started\n");
     SPI & ptrSPI=SPI::getInstance();
     unsigned int cnt=this->WrongTransactions;
     unsigned int error;
@@ -468,13 +464,15 @@ uint8_t MCU::SendInt(uint8_t command,uint16_t value)
     msg.push_back(uint8_t(value&0xff));
     while(cnt--)
     {
+        PrintLog(Debug_log, (std::string) __func__+  (std::string)"Transactions left: "+ std::to_string(cnt) );
         error=ptrSPI.transaction(msg,3);
         if (error==0)
         {
             answer=ptrSPI.recData();
-            if (answer.size()==1)
+            if (answer.size()==2)
             {
-                PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
+                answer.erase(answer.begin());
+                //PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
                 return answer.front()==(ACK|EXEC)? OK:NOK;
             }
         }
@@ -483,9 +481,9 @@ uint8_t MCU::SendInt(uint8_t command,uint16_t value)
 }
 uint8_t MCU::SendDoubleInt(uint8_t command,uint16_t value1,uint16_t value2)
 {
-    PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started\n");
+    //PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started\n");
     SPI & ptrSPI=SPI::getInstance();
-    uint16_t cnt=this->WrongTransactions;
+    uint8_t cnt=this->WrongTransactions;
     uint16_t error;
     std::vector<unsigned char> msg, answer;
     msg.push_back(command);
@@ -495,20 +493,22 @@ uint8_t MCU::SendDoubleInt(uint8_t command,uint16_t value1,uint16_t value2)
     msg.push_back((value2>>8));
     while(cnt--)
     {
+        PrintLog(Debug_log, (std::string) __func__+  (std::string)"Transactions left: "+ std::to_string(cnt) );
         error=ptrSPI.transaction(msg,3);
         if (error==0)
         {
             answer=ptrSPI.recData();
-            if (answer.size()==1)
+            if (answer.size()==2)
             {
-                PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
+                answer.erase(answer.begin());
+                //PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
                 return answer.front()==(ACK|EXEC)? OK:NOK;
             }
         }
     }
     return TR_ERR;
 }
-
+/*
 int main(void)
 {
     std::string filename="/dev/spidev1.0";
@@ -522,3 +522,4 @@ int main(void)
     //mcu.CheckStatus();
     return 1;
 }
+*/

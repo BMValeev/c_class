@@ -45,7 +45,7 @@ I2C::~I2C() { }
 }*/
 int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned char> buffer, unsigned int rlen)
 {
-    
+
 }
 int I2C::SendRaw(std::vector<unsigned char> address,std::vector<unsigned char>, unsigned int len)
 {

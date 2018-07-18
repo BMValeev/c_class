@@ -38,7 +38,6 @@ public:
     uint8_t begin(std::string device);
     uint8_t transaction(std::vector<unsigned char> buffer, uint8_t ans_len);
     std::vector<unsigned char> recData(void);
-    void changePrint(void (SPI::*ptrFunc)(uint8_t, std::string));
 
 protected:
     SPI();
@@ -57,13 +56,23 @@ private:
     std::string DeviceName;
     uint8_t init=0;
     void PrintLog(uint8_t status, std::string text);
-    void (SPI::*ptrPrintLog)(uint8_t, std::string) = &SPI::PrintLog;
     int SendRaw_new(unsigned char *buffer, unsigned int len, uint8_t ans_len);
     void SetDeviceName(std::string Name);
     void CleanRecMsg(void);
     unsigned char CRC8(unsigned char *buffer, unsigned int len);
     int SendPacket(std::vector<unsigned char> Buffer, uint8_t ans_len);
 };
+
+
+
+
+
+
+
+
+
+
+
 
 class MCU
 {
@@ -85,12 +94,10 @@ public:
     uint8_t SetIrrigation(uint8_t Enabled );
     uint8_t SetModulation(uint16_t Frequency );
     uint8_t SetDutyRate(uint16_t CrestFactor );
-    void changePrint(void (MCU::*ptrFunc)(uint8_t, std::string));
 
 private:
-    uint16_t WrongTransactions=3;
+    uint8_t WrongTransactions=3;
     void PrintLog(uint8_t status, std::string text);
-    void (MCU::*ptrPrintLog)(uint8_t, std::string) = &MCU::PrintLog;
 
 protected:
     uint8_t SendBool(uint8_t command,uint16_t value);
