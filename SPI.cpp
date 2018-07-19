@@ -131,6 +131,7 @@ int SPI::SendRaw_new(unsigned char *buffer, unsigned int len, uint8_t ans_len) /
     PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started\n");
     unsigned char receive[ans_len];
     unsigned char test[4]={0x05,0x33,0x00,0x00};
+    unsigned char test1[2]={0x03,0x33};
     if (this->status==0)
     {
         if (ans_len==3)
@@ -138,8 +139,8 @@ int SPI::SendRaw_new(unsigned char *buffer, unsigned int len, uint8_t ans_len) /
             PrintLog(Debug_log,(std::string) __func__+  (std::string)"Test branch\n");
             CleanRecMsg();
             this->LastRecMsg.push_back(0x03);
-            this->LastRecMsg.push_back(0x01);
-            this->LastRecMsg.push_back(0xEA);
+            this->LastRecMsg.push_back(0x33);
+            this->LastRecMsg.push_back(CRC8(test1,2));
             return OK;
         } else
         {
