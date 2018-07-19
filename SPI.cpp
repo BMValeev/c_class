@@ -334,13 +334,14 @@ uint8_t MCU::SetStanby(uint8_t Status)
     PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started\n");
     return SendBool(0x00, Status);
 }
-std::vector<unsigned char> MCU::CheckStatus(void)
+uint8_t MCU::CheckStatus(std::vector<unsigned char> *status)
 {
     PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started\n");
     SPI & ptrSPI=SPI::getInstance();
     uint16_t cnt=this->WrongTransactions;
     uint16_t error;
-    std::vector<unsigned char> msg, answer, null;
+    std::vector<unsigned char> msg,  null;
+    std::vector<unsigned char> answer= *status;
     msg.push_back(0x01);
     while(cnt--)
     {
@@ -353,11 +354,11 @@ std::vector<unsigned char> MCU::CheckStatus(void)
             {
                 answer.erase(answer.begin());
                 PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
-                return answer;
+                return OK;
             }
         }
     }
-    return null;
+    return TR_ERR;
 }
 void MCU::RenewAll(void ) {
 
@@ -558,8 +559,8 @@ uint8_t MCU::SendDoubleInt(uint8_t command,uint16_t value1,uint16_t value2)
     }
     return TR_ERR;
 }
-
-/*int main(void)
+/*
+int main(void)
 {
     std::string filename="/dev/spidev1.0";
     MCU mcu(filename);
@@ -569,6 +570,7 @@ uint8_t MCU::SendDoubleInt(uint8_t command,uint16_t value1,uint16_t value2)
     data.push_back( value);
     cout<<"Here works0";
     mcu.SetStanby(1);
-    //mcu.CheckStatus();
+    mcu.CheckStatus(&received);
     return 1;
-}*/
+}
+*/

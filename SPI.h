@@ -80,7 +80,7 @@ public:
     MCU(std::string filename);
     ~MCU();
     uint8_t SetStanby(uint8_t Status);
-    std::vector<unsigned char> CheckStatus();
+    uint8_t CheckStatus(std::vector<unsigned char> *status);
     void RenewAll( );
     uint8_t SetSubroutine(uint8_t Routine1,uint8_t Routine2);
     uint8_t SetConnector(uint8_t  Connector);
