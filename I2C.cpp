@@ -17,6 +17,7 @@ I2C::~I2C() { }
 /*Unsafe Methods*/
 /*int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned char> buffer, unsigned int rlen)
 {
+
     struct i2c_client *client = this->i2c_data;
     struct i2c_msg msgs[2];
     unsigned int len=buffer.size();
@@ -45,6 +46,7 @@ I2C::~I2C() { }
 }*/
 int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned char> buffer, unsigned int rlen)
 {
+    struct i2c_rdwr_ioctl_data message;
 
 }
 int I2C::SendRaw(std::vector<unsigned char> address,std::vector<unsigned char>, unsigned int len)

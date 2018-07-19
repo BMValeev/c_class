@@ -329,7 +329,7 @@ void MCU::PrintLog(uint8_t status, std::string text)
     cout<<status<<text<<endl;
 }
 
-uint8_t MCU::SetStanby(uint16_t Status)
+uint8_t MCU::SetStanby(uint8_t Status)
 {
     PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started\n");
     return SendBool(0x00, Status);
@@ -362,66 +362,89 @@ std::vector<unsigned char> MCU::CheckStatus(void)
 void MCU::RenewAll(void ) {
 
 }
-uint8_t MCU::SetSubroutine(unsigned char Routine)
+uint8_t MCU::SetSubroutine(uint8_t Routine1,uint8_t Routine2)
 {
     PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started\n");
-    return SendInt(0x00, Routine);
+    return SendInt(0x03, uint16_t(Routine1<<8|Routine2));
 }
-uint8_t MCU::SetConnector(uint16_t  Connector)
+uint8_t MCU::SetConnector(uint8_t  Connector)
 {
     PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started\n");
-    return SendInt(0x00, Connector);
+    return SendChar(0x04, Connector);
 }
 uint8_t MCU::SetMaxVoltage(uint16_t BlueButton, uint16_t YellowButton)
 {
     PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started\n");
-    return SendDoubleInt(0x00, BlueButton,YellowButton);
+    return SendDoubleInt(0x05, BlueButton,YellowButton);
 }
 uint8_t MCU::SetPower(uint16_t BlueButton, uint16_t YellowButton)
 {
     PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started\n");
-    return SendDoubleInt(0x00, BlueButton,YellowButton);
+    return SendDoubleInt(0x06, BlueButton,YellowButton);
 }
-uint8_t MCU::SetMaxTime(uint16_t MaxTime )
+uint8_t MCU::SetMaxTime(uint8_t MaxTime )
 {
     PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started\n");
-    return SendBool(0x00, MaxTime);
+    return SendChar(0x07, MaxTime);
 }
 uint8_t MCU::SetAutoStart(uint8_t Enabled )
 {
     PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started\n");
-    return SendBool(0x00, Enabled);
+    return SendBool(0x08, Enabled);
 }
-uint8_t MCU::SetAutoStartDelay(uint16_t DelayTime )
+uint8_t MCU::SetAutoStartDelay(uint8_t DelayTime )
 {
     PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started\n");
-    return SendInt(0x00, DelayTime);
+    return SendChar(0x09, DelayTime);
 }
 uint8_t MCU::SetAutoStop(uint8_t Enabled )
 {
     PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started\n");
-    return SendInt(0x00, Enabled);
+    return SendBool(0x0A, Enabled);
 }
 uint8_t MCU::SetAutoStopResistance(uint16_t Resistance )
 {
     PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started\n");
-    return SendInt(0x00, Resistance);
+    return SendInt(0x0b, Resistance);
 }
 uint8_t MCU::SetIrrigation(uint8_t Enabled )
 {
     PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started\n");
-    return SendBool(0x00, Enabled);
+    return SendBool(0x0c, Enabled);
 }
-uint8_t MCU::SetModulation(uint16_t Frequency )
+uint8_t MCU::SetIrrigationDelay(uint8_t Delay )
 {
     PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started\n");
-    return SendInt(0x00, Frequency);
+    return SendChar(0x0d, Delay);
 }
-uint8_t MCU::SetDutyRate(uint16_t CrestFactor )
+
+uint8_t MCU::SetModulation(uint16_t Frequency1, uint16_t Frequency2)
 {
     PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started\n");
-    return SendInt(0x00, CrestFactor);
+    return SendDoubleInt(0x0E, Frequency1,Frequency2);
 }
+uint8_t MCU::SetDutyCycle(uint8_t DutyCycle1 ,uint8_t DutyCycle2)
+{
+    PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started\n");
+    return SendInt(0x0f, uint16_t(DutyCycle1<<8|DutyCycle2));
+}
+uint8_t MCU::SetFilter(uint8_t  Filter1,uint8_t  Filter2)
+{
+    PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started\n");
+    return SendInt(0x10, uint16_t(Filter1<<8|Filter2));
+}
+uint8_t MCU::SetPedalCut(uint8_t  Status)
+{
+    PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started\n");
+    return SendBool(0x11, Status);
+}
+uint8_t MCU::SetPedalCoag(uint8_t  Status)
+{
+    PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started\n");
+    return SendBool(0x12, Status);
+}
+
+
 
 uint8_t MCU::SendBool(uint8_t command,uint16_t value)
 {
@@ -454,6 +477,33 @@ uint8_t MCU::SendBool(uint8_t command,uint16_t value)
     return TR_ERR;
 }
 uint8_t MCU::SendInt(uint8_t command,uint16_t value)
+{
+    //PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started\n");
+    SPI & ptrSPI=SPI::getInstance();
+    unsigned int cnt=this->WrongTransactions;
+    unsigned int error;
+    std::vector<unsigned char> msg, answer;
+    msg.push_back(command);
+    msg.push_back(uint8_t(value&0xff));
+    msg.push_back(uint8_t(value>>8));
+    while(cnt--)
+    {
+        PrintLog(Debug_log, (std::string) __func__+  (std::string)"Transactions left: "+ std::to_string(cnt) );
+        error=ptrSPI.transaction(msg,3);
+        if (error==0)
+        {
+            answer=ptrSPI.recData();
+            if (answer.size()==2)
+            {
+                answer.erase(answer.begin());
+                //PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
+                return answer.front()==(ACK|EXEC)? OK:NOK;
+            }
+        }
+    }
+    return TR_ERR;
+}
+uint8_t MCU::SendChar(uint8_t command,uint8_t value)
 {
     //PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started\n");
     SPI & ptrSPI=SPI::getInstance();
@@ -508,7 +558,7 @@ uint8_t MCU::SendDoubleInt(uint8_t command,uint16_t value1,uint16_t value2)
     }
     return TR_ERR;
 }
-/*
+
 int main(void)
 {
     std::string filename="/dev/spidev1.0";
@@ -522,4 +572,3 @@ int main(void)
     //mcu.CheckStatus();
     return 1;
 }
-*/
