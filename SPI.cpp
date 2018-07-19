@@ -559,7 +559,7 @@ uint8_t MCU::SendDoubleInt(uint8_t command,uint16_t value1,uint16_t value2)
     return TR_ERR;
 }
 
-int main(void)
+/*int main(void)
 {
     std::string filename="/dev/spidev1.0";
     MCU mcu(filename);
@@ -571,4 +571,4 @@ int main(void)
     mcu.SetStanby(1);
     //mcu.CheckStatus();
     return 1;
-}
+}*/
