@@ -131,6 +131,7 @@ int SPI::SendRaw_new(unsigned char *buffer, unsigned int len, uint8_t ans_len) /
     PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started\n");
     unsigned char receive[ans_len];
     unsigned char test[4]={0x05,0x33,0x00,0x00};
+    unsigned char test1[2]={0x03,0x33};
     if (this->status==0)
     {
         if (ans_len==3)
@@ -138,8 +139,8 @@ int SPI::SendRaw_new(unsigned char *buffer, unsigned int len, uint8_t ans_len) /
             PrintLog(Debug_log,(std::string) __func__+  (std::string)"Test branch\n");
             CleanRecMsg();
             this->LastRecMsg.push_back(0x03);
-            this->LastRecMsg.push_back(0x01);
-            this->LastRecMsg.push_back(0xEA);
+            this->LastRecMsg.push_back(0x33);
+            this->LastRecMsg.push_back(CRC8(test1,2));
             return OK;
         } else
         {
@@ -356,14 +357,13 @@ uint8_t MCU::SetStanby(uint8_t Status)
     PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started\n");
     return SendBool(0x00, Status);
 }
-uint8_t MCU::CheckStatus(std::vector<unsigned char> *status)
+uint8_t MCU::CheckStatus(std::vector<unsigned char> &answer)
 {
     PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started\n");
     SPI & ptrSPI=SPI::getInstance();
     uint16_t cnt=this->WrongTransactions;
     uint16_t error;
     std::vector<unsigned char> msg,  null;
-    std::vector<unsigned char> answer= *status;
     msg.push_back(0x01);
     while(cnt--)
     {
@@ -586,7 +586,7 @@ uint8_t MCU::SendDoubleInt(uint8_t command,uint16_t value1,uint16_t value2)
     return TR_ERR;
 }
 
-int main(void)
+/*int main(void)
 {
     std::string filename="/dev/spidev1.0";
     MCU mcu(filename);
@@ -598,4 +598,4 @@ int main(void)
     mcu.SetStanby(1);
     mcu.CheckStatus(&received);
     return 1;
-}
+}*/
