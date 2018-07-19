@@ -153,10 +153,11 @@ int SPI::SendRaw_new(unsigned char *buffer, unsigned int len, uint8_t ans_len) /
             return OK;
         }
     }
+    PrintLog(Debug_log,(std::string) __func__+  std::to_string(len));
     spi_ioc_transfer send[2];
     send[0].tx_buf = (unsigned long)buffer;
     send[0].rx_buf = (unsigned long)NULL;
-    send[0].len = ARRAY_SIZE(buffer);
+    send[0].len = len;
     send[0].delay_usecs = 1000;
     send[0].speed_hz = this->speed;
     send[0].bits_per_word = this->bitsPerWord;
@@ -165,7 +166,7 @@ int SPI::SendRaw_new(unsigned char *buffer, unsigned int len, uint8_t ans_len) /
     send[0].pad=0;
     send[0].cs_change = 0;
     send[1].tx_buf = (unsigned long)NULL;
-    send[1].rx_buf = (unsigned long)buffer;
+    send[1].rx_buf = (unsigned long)receive;
     send[1].len = ans_len;
     send[1].delay_usecs = 0;
     send[1].speed_hz = this->speed;
@@ -183,7 +184,7 @@ int SPI::SendRaw_new(unsigned char *buffer, unsigned int len, uint8_t ans_len) /
     CleanRecMsg();
     for (retVal = 0; retVal < (ans_len); retVal++)
     {
-        this->LastRecMsg.push_back(buffer[retVal]);
+        this->LastRecMsg.push_back(receive[retVal]);
     }
     PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
     return OK;
