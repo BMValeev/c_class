@@ -38,42 +38,49 @@ uint8_t SPI::begin(std::string device)/*Need to check*/
     if(this->spifd < 0){
         PrintLog(Critical_log, "could not open SPI device\n");
         this->status=0;
+        this->Mutex=0;
         return NOK;
     }
     statusVal = ioctl (this->spifd, SPI_IOC_WR_MODE, &(this->mode));
     if(statusVal < 0){
         PrintLog(Critical_log,(std::string) __func__+  (std::string)"Could not set SPIMode (WR)...ioctl fail\n");
         this->status=0;
+        this->Mutex=0;
         return NOK;
     }
     statusVal = ioctl (this->spifd, SPI_IOC_RD_MODE, &(this->mode));
     if(statusVal < 0) {
         PrintLog(Critical_log, (std::string) __func__+  (std::string)"Could not set SPIMode (RD)...ioctl fail\n");
         this->status=0;
+        this->Mutex=0;
         return NOK;
     }
     statusVal = ioctl (this->spifd, SPI_IOC_WR_BITS_PER_WORD, &(this->bitsPerWord));
     if(statusVal < 0) {
         PrintLog(Critical_log,(std::string) __func__+  (std::string)"Could not set SPI bitsPerWord (WR)...ioctl fail\n");
         this->status=0;
+        this->Mutex=0;
         return NOK;
     }
     statusVal = ioctl (this->spifd, SPI_IOC_RD_BITS_PER_WORD, &(this->bitsPerWord));
     if(statusVal < 0) {
         PrintLog(Critical_log,(std::string) __func__+  (std::string)"Could not set SPI bitsPerWord(RD)...ioctl fail\n");
         this->status=0;
+        this->Mutex=0;
         return NOK;
     }
     statusVal = ioctl (this->spifd, SPI_IOC_WR_MAX_SPEED_HZ, &(this->speed));
     if(statusVal < 0) {
         PrintLog(Critical_log,(std::string) __func__+  (std::string)"Could not set SPI speed (WR)...ioctl fail\n");
         this->status=0;
+        this->Mutex=0;
         return NOK;
     }
     statusVal = ioctl (this->spifd, SPI_IOC_RD_MAX_SPEED_HZ, &(this->speed));
     if(statusVal < 0) {
         PrintLog(Critical_log, (std::string) __func__+  (std::string)"Could not set SPI speed (RD)...ioctl fail \n");
         this->status=0;
+        this->Mutex=0;
         return NOK;
     }
     this->status=1;
@@ -123,14 +130,28 @@ int SPI::SendRaw_new(unsigned char *buffer, unsigned int len, uint8_t ans_len) /
     int retVal = 0;
     PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started\n");
     unsigned char receive[ans_len];
+    unsigned char test[4]={0x05,0x33,0x00,0x00};
     if (this->status==0)
     {
-        PrintLog(Debug_log,(std::string) __func__+  (std::string)"Test branch\n");
-        CleanRecMsg();
-        this->LastRecMsg.push_back(0x03);
-        this->LastRecMsg.push_back(0x01);
-        this->LastRecMsg.push_back(0xEA);
-        return OK;
+        if (ans_len==3)
+        {
+            PrintLog(Debug_log,(std::string) __func__+  (std::string)"Test branch\n");
+            CleanRecMsg();
+            this->LastRecMsg.push_back(0x03);
+            this->LastRecMsg.push_back(0x01);
+            this->LastRecMsg.push_back(0xEA);
+            return OK;
+        } else
+        {
+            PrintLog(Debug_log,(std::string) __func__+  (std::string)"Test branch\n");
+            CleanRecMsg();
+            this->LastRecMsg.push_back(0x05);
+            this->LastRecMsg.push_back(0x33);
+            this->LastRecMsg.push_back(0x00);
+            this->LastRecMsg.push_back(0x00);
+            this->LastRecMsg.push_back(CRC8(test,4));
+            return OK;
+        }
     }
     spi_ioc_transfer send[2];
     send[0].tx_buf = (unsigned long)buffer;
@@ -346,15 +367,19 @@ uint8_t MCU::CheckStatus(std::vector<unsigned char> *status)
     while(cnt--)
     {
         PrintLog(Debug_log, (std::string) __func__+  (std::string)"Transactions left: "+ std::to_string(cnt) );
-        error=ptrSPI.transaction(msg,4);
+        error=ptrSPI.transaction(msg,5);
         if (error==0)
         {
             answer = ptrSPI.recData();
-            if (answer.size()==3)
+            if (answer.size()==4)
             {
                 answer.erase(answer.begin());
-                PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
-                return OK;
+                if(answer.front()==(ACK|EXEC))
+                {
+                    answer.erase(answer.begin());
+                    PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
+                    return OK;
+                }
             }
         }
     }
@@ -497,8 +522,8 @@ uint8_t MCU::SendInt(uint8_t command,uint16_t value)
             if (answer.size()==2)
             {
                 answer.erase(answer.begin());
-                //PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
                 return answer.front()==(ACK|EXEC)? OK:NOK;
+                //PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
             }
         }
     }
@@ -523,8 +548,8 @@ uint8_t MCU::SendChar(uint8_t command,uint8_t value)
             if (answer.size()==2)
             {
                 answer.erase(answer.begin());
-                //PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
                 return answer.front()==(ACK|EXEC)? OK:NOK;
+                //PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
             }
         }
     }
@@ -552,14 +577,14 @@ uint8_t MCU::SendDoubleInt(uint8_t command,uint16_t value1,uint16_t value2)
             if (answer.size()==2)
             {
                 answer.erase(answer.begin());
-                //PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
                 return answer.front()==(ACK|EXEC)? OK:NOK;
+                //PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
             }
         }
     }
     return TR_ERR;
 }
-/*
+
 int main(void)
 {
     std::string filename="/dev/spidev1.0";
@@ -573,4 +598,3 @@ int main(void)
     mcu.CheckStatus(&received);
     return 1;
 }
-*/
