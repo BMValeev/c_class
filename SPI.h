@@ -59,12 +59,13 @@ private:
     std::string DeviceName;
     uint8_t init=0;
     void PrintLog(uint8_t status, std::string text);
+    static void PrintToCout(uint8_t status, std::string msg);
     int SendRaw_new(unsigned char *buffer, unsigned int len, uint8_t ans_len);
     void SetDeviceName(std::string Name);
     void CleanRecMsg(void);
     unsigned char CRC8(unsigned char *buffer, unsigned int len);
     int SendPacket(std::vector<unsigned char> Buffer, uint8_t ans_len);
-    CallbackFunction m_cb;
+    CallbackFunction m_cb = SPI::PrintToCout;
 };
 
 
@@ -106,7 +107,8 @@ public:
 private:
     uint8_t WrongTransactions=3;
     void PrintLog(uint8_t status, std::string text);
-    CallbackFunction m_cb;
+    static void PrintToCout(uint8_t status, std::string msg);
+    CallbackFunction m_cb = MCU::PrintToCout;
 
 protected:
     uint8_t SendBool(uint8_t command,uint16_t value);

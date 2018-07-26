@@ -199,8 +199,8 @@ void SPI::SetDeviceName(std::string Name)
              * Used for configuration of the device in construction
              */
     PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started\n");
-    this->DeviceName=Name;
-    cout<<this->DeviceName;
+    this->DeviceName=Name;    
+    PrintLog(Info_log, "Function name - " + DeviceName + "\n");
     PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
 }
 void SPI::CleanRecMsg(void)
@@ -219,8 +219,13 @@ void SPI::PrintLog(uint8_t status, std::string text)
     {
         m_cb(status,text);
     }
-    cout<<status<<text<<endl;
 }
+
+void SPI::PrintToCout(uint8_t status, string msg)
+{
+        cout<<status<<msg<<endl;
+}
+
 unsigned char SPI::CRC8(unsigned char *buffer, unsigned int len)
 {
     unsigned char crc = 0x82;
@@ -261,7 +266,6 @@ int SPI::SendPacket(std::vector<unsigned char> Buffer, uint8_t ans_len)
 // Construction and destruction
 MCU::MCU(std::string filename,CallbackFunction cb)
 {
-    this->m_cb=0;
     this->m_cb=cb;
     SPI & ptrSPI=SPI::getInstance();
     ptrSPI.begin(filename,cb);
@@ -276,7 +280,11 @@ void MCU::PrintLog(uint8_t status, std::string text)
     {
         m_cb(status,text);
     }
-    cout<<status<<text<<endl;
+}
+
+void MCU::PrintToCout(uint8_t status, string msg)
+{
+    cout<<status<<msg<<endl;
 }
 
 uint8_t MCU::SetStanby(uint8_t Status)
@@ -286,7 +294,7 @@ uint8_t MCU::SetStanby(uint8_t Status)
 }
 uint8_t MCU::CheckStatus(std::vector<unsigned char> &answer)
 {
-    PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started\n");
+    PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started\n");
     SPI & ptrSPI=SPI::getInstance();
     uint16_t cnt=this->WrongTransactions;
     uint16_t error;
@@ -565,22 +573,3 @@ uint8_t MCU::SendDoubleInt(uint8_t command,uint16_t value1,uint16_t value2)
     }
     return TR_ERR;
 }
-
-
-int main(void)
-{
-
-
-    std::string filename="/dev/spidev1.0";
-    MCU mcu(filename,Printfile);
-    std::vector<unsigned char> data;
-    std::vector<unsigned char> received;
-    unsigned char value= 1;
-    data.push_back( value);
-    cout<<"Here works0";
-    mcu.SetStanby(1);
-    mcu.CheckStatus(received);
-    return 1;
-}
-
-
