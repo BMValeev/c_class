@@ -338,7 +338,7 @@ void MCU::RenewAll(void ) {
 uint8_t MCU::SetSubroutine(uint8_t Routine1,uint8_t Routine2)
 {
     PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started\n");
-    return SendInt(0x03, uint16_t(Routine1<<8|Routine2));
+    return SendInt(0x03, uint16_t(Routine2<<8|Routine1));
 }
 uint8_t MCU::SetConnector(uint8_t  Connector)
 {
@@ -399,12 +399,12 @@ uint8_t MCU::SetModulation(uint16_t Frequency1, uint16_t Frequency2)
 uint8_t MCU::SetDutyCycle(uint8_t DutyCycle1 ,uint8_t DutyCycle2)
 {
     PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started\n");
-    return SendInt(0x0f, uint16_t(DutyCycle1<<8|DutyCycle2));
+    return SendInt(0x0f, uint16_t(DutyCycle2<<8|DutyCycle1));
 }
 uint8_t MCU::SetFilter(uint8_t  Filter1,uint8_t  Filter2)
 {
     PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started\n");
-    return SendInt(0x10, uint16_t(Filter1<<8|Filter2));
+    return SendInt(0x10, uint16_t(Filter2<<8|Filter1));
 }
 uint8_t MCU::SetPedalCut(uint8_t  Status)
 {
