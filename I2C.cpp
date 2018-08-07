@@ -13,56 +13,18 @@ I2C::I2C() {
     theOneTrueInstance = this;
 }
 I2C::~I2C() { }
-
-/*Unsafe Methods*/
-/*int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned char> buffer, unsigned int rlen)
-{
-
-    struct i2c_client *client = this->i2c_data;
-    struct i2c_msg msgs[2];
-    unsigned int len=buffer.size();
-    unsigned char txbuf[buffer.size()];
-    int ret;
-    for (unsigned int i=0;i<len;i++)
-    {
-        txbuf[i]=buffer[i];
-    }
-    msgs[0].addr = client->addr;
-    msgs[0].flags = 0;
-    msgs[0].len = len;
-    msgs[0].buf = txbuf;
-
-    msgs[1].addr = client->addr;
-    msgs[1].flags = I2C_M_RD;
-    msgs[1].len = rlen;
-    msgs[1].buf = this->LastRecMsg;
-
-    ret = i2c_transfer(client->adapter, msgs, 2);
-    if (ret < 0)
-    {
-        return ret;
-    }
-    return 0;
-}*/
-int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned char> buffer, unsigned int rlen)
-{
-    struct i2c_rdwr_ioctl_data message;
-
+I2C & I2C::getInstance() {
+    if (!theOneTrueInstance) initInstance();
+    return *theOneTrueInstance;
 }
-int I2C::SendRaw(std::vector<unsigned char> address,std::vector<unsigned char>, unsigned int len)
+void I2C::initInstance() { new I2C; }
+
+
+
+std::vector<unsigned char> I2C::recData(void)
 {
-    this->LastRecMsg.clear();
-    this->LastRecMsg.push_back(0x02);
-    this->LastRecMsg.push_back(0x02);
-    this->LastRecMsg.push_back(CRC8(this->LastRecMsg.data(),2));
-    return 0;
-}
-void I2C::SetDeviceName(std::string Name)
-{
-    /*
-         * Used for configuration of the device in construction
-         */
-    this->DeviceName=Name;
+    this->NewData=0;
+    return LastRecMsg;
 }
 void I2C::CleanRecMsg(void)
 {
@@ -72,6 +34,25 @@ void I2C::CleanRecMsg(void)
     this->LastRecMsg.clear();
     this->NewData=0;
 }
+void I2C::SetDeviceName(std::string Name)
+{
+    /*
+         * Used for configuration of the device in construction
+         */
+    this->DeviceName=Name;
+}
+void I2C::PrintLog(uint8_t status, std::string text)
+{
+    if (this->m_cb!=0)
+    {
+        m_cb(status,text);
+    }
+}
+
+void I2C::PrintToCout(uint8_t status, string msg)
+{
+    cout<<status<<msg<<endl;
+}
 /*Safe functions*/
 unsigned char I2C::CRC8(unsigned char *buffer, unsigned int len)
 {
@@ -80,43 +61,148 @@ unsigned char I2C::CRC8(unsigned char *buffer, unsigned int len)
 
     while (len--)
     {
-        crc ^= *buffer++;; crc = (crc & 1)? (crc >> 1) ^ 0x8c : crc >> 1;
+        crc ^= *buffer++;
+        for (i = 0; i < 8; i++)
+            crc = (crc & 1)? (crc >> 1) ^ 0x8c : crc >> 1;
     }
     return crc;
 }
-int I2C::SendPacket(std::vector<unsigned char> address,std::vector<unsigned char> buffer, unsigned int len)
+
+/*Unsafe Methods*/
+int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned char> buffer, unsigned int rlen)
 {
-    unsigned char FullLen=buffer.size()+3;
-    unsigned char *temp;
-    std::vector<unsigned char> package;
-    temp=buffer.data();
-    package.push_back(FullLen);
-    cout<<"Here works1";
-    for(int i=0;i<buffer.size();i++)
+    int ret;
+    unsigned int cnt, cnt_all;
+    /*unsigned char buf[10]= {0};
+    buf[0] = 0b11100000;
+    buf[1] = 0b0000001;
+    buf[2] = 0b0000011;
+    buf[3] = 0b0000111;
+    buf[4] = 0b0001111;
+    buf[5] = 0b0011111;
+    buf[6] = CRC8(buf,6);*/
+
+
+    unsigned char buf_rec[3]={0x00,0x00,0x00};
+
+    i2c_rdwr_ioctl_data message;
+    i2c_msg message_packet[2];
+    message_packet[0].addr=address.front();
+    message_packet[0].flags=0;
+    message_packet[0].len=buffer.size();
+    message_packet[0].buf=buffer.data();
+    message_packet[1].addr=address.front();
+    message_packet[1].flags=I2C_M_RD;//I2C_M_RD|I2C_M_RECV_LEN;I2C_M_NOSTART
+    message_packet[1].buf=buf_rec;
+    message_packet[1].len=10;
+    if (rlen==0)
     {
-        package.push_back(temp[i]);
+        message_packet[1].len=10;
+        cnt_all=10;
     }
-    package.push_back(CRC8(package.data(),FullLen-2));
+    else if (rlen>7)
+    {
+        message_packet[1].len=20;
+        cnt_all=20;
+    }
+    else
+    {
+        message_packet[1].len=rlen;
+        cnt_all=rlen;
+    }
+    memset(&message, 0, sizeof(message));
+    message.msgs=message_packet;
+    if (rlen!=0)
+    {
+        message.nmsgs=2;
+    }
+    else
+    {
+        message.nmsgs=1;
+    }
+    int file = open(this->DeviceName.c_str(), O_RDWR);
+    cout<<"i2copen"<<endl;
+    if (file == -1)
+    {
+        perror("/dev/i2c-2");
+    }
+    if (ioctl(file, I2C_SLAVE, address.front()) < 0)
+    {
+        perror("Failed to acquire bus access and/or talk to slave");
+        return NOK;
+    }
+    cout<<"ioctl"<<endl;
+    ret=ioctl(file, I2C_RDWR, &message);
+    cout<<"ioctlmessge"<<endl;
+    if (ret<0) {
+        fprintf (stderr, "%s.\n", strerror(-ret));
+        return NOK;
+    }
     CleanRecMsg();
-    if(SendRaw(address, package,len))
+    for (cnt = 0; cnt < (cnt_all); cnt++)
     {
-        return 1;
+        this->LastRecMsg.push_back(buf_rec[cnt]);
     }
-    cout<<"Here works2";
-    if(CRC8(this->LastRecMsg.data(),this->LastRecMsg.size()))
+    cnt_all=cnt_all-this->LastRecMsg.front();
+    while (--cnt_all)
     {
-        return 1;
+        this->LastRecMsg.pop_back();
     }
-    this->NewData=1;
+    return OK;
+}
+
+int I2C::SendRaw(std::vector<unsigned char> address,std::vector<unsigned char>, unsigned int len)
+{
+    this->LastRecMsg.clear();
+    this->LastRecMsg.push_back(0x02);
+    this->LastRecMsg.push_back(0x02);
+    this->LastRecMsg.push_back(CRC8(this->LastRecMsg.data(),2));
     return 0;
 }
-I2C & I2C::getInstance() {
-    if (!theOneTrueInstance) initInstance();
-    return *theOneTrueInstance;
-}
-void I2C::initInstance() { new I2C; }
-unsigned int I2C::begin(std::string device, i2c_client *client)
+
+int I2C::SendPacket(std::vector<unsigned char> address,std::vector<unsigned char> buffer, unsigned int len)
 {
+    unsigned char *temp_buf,*temp_addr,*temp_rec;
+    std::vector<unsigned char> package;
+    std::vector<unsigned char> crc_tr;
+    std::vector<unsigned char> crc_rec;
+    temp_buf=buffer.data();
+    temp_addr=address.data();
+    crc_tr.push_back(temp_addr[0]<<1);
+    for(int i=0;i<buffer.size();i++)
+    {
+        crc_tr.push_back(temp_buf[i]);
+    }
+    for(int i=0;i<buffer.size();i++)
+    {
+        package.push_back(temp_buf[i]);
+    }
+    package.push_back(CRC8(crc_tr.data(),crc_tr.size()));
+    CleanRecMsg();
+    if(SendRaw_new(address, package,len))
+    {
+        return NOK;
+    }
+    temp_rec=this->LastRecMsg.data();
+    crc_rec.push_back(temp_addr[0]<<1);
+    for(int i=0;i<this->LastRecMsg.size();i++)
+    {
+        crc_tr.push_back(temp_rec[i]);
+        printf("%02x\n",temp_rec[i]);
+    }
+    printf("%02x\n",CRC8(crc_tr.data(),crc_tr.size()));
+    if(CRC8(crc_tr.data(),crc_tr.size()))
+    {
+        return NOK;
+    }
+    this->LastRecMsg.pop_back();
+    this->NewData=1;
+    return OK;
+}
+
+unsigned int I2C::begin(std::string device,CallbackFunction cb)
+{
+    int file;
     this->Mutex=1;
     if (this->init==1)
     {
@@ -124,9 +210,19 @@ unsigned int I2C::begin(std::string device, i2c_client *client)
         this->Mutex=0;
         return 1;
     }
-    this->i2c_data=client;
+    //this->m_cb=0;
+    //this->m_cb=cb;
     CleanRecMsg();
     SetDeviceName(device);
+    //file = open(this->DeviceName.c_str(), O_RDWR);
+    /*if (file == -1)
+    {
+        perror(this->DeviceName.c_str());
+    }
+    else
+    {
+        this->i2cfd=file;
+    }*/
     /*int statusVal = -1;
         this->i2cfd = -1;
         SetDeviceName(device);
@@ -143,36 +239,40 @@ unsigned int I2C::transaction(std::vector<unsigned char> address,std::vector<uns
     unsigned int status=0;
     if(this->Mutex)
     {
-        return 1;
+        return NOK;
     }
     if(this->NewData)
     {
-        return 1;
+        return NOK;
     }
     this->Mutex=1;
     if (SendPacket(address,buffer,len))
     {
         this->Mutex=0;
-        return 1;
+        return NOK;
     }
     cout<<"Here works3";
     this->Mutex=0;
-    return 0;
+    return OK;
 }
-std::vector<unsigned char> I2C::recData(void)
-{
-    this->NewData=0;
-    return LastRecMsg;
-}
+
 
 // ConnModule class
 // Construction and destruction
-ConnModule::ConnModule(std::string filename,struct i2c_client *client) {
+ConnModule::ConnModule(std::string filename,CallbackFunction cb) {
     I2C &ptrI2C = I2C::getInstance();
-    ptrI2C.begin(filename, client);
     std::vector<unsigned char> address;
-    address.push_back(0x01);
+    cout<<"3"<<endl;
+    //this->m_cb=0;
+    //this->m_cb=cb;
+    cout<<"4"<<endl;
+    ptrI2C.begin(filename,cb);
+    cout<<"5"<<endl;
+    address.push_back(0b01110000);
+    cout<<"55"<<endl;
+    //setAddress(address);
     this->addr=address;
+    cout<<"6"<<endl;
 }
 ConnModule::~ConnModule() {
 
@@ -185,267 +285,226 @@ std::vector<unsigned char> ConnModule::setAddress(std::vector<unsigned char>addr
 {
     this->addr=addr;
 }
-unsigned int ConnModule::SetUUID(std::vector<unsigned char> uuid)
+uint8_t ConnModule::SetUUID(std::vector<unsigned char> uuid,std::vector<unsigned char> &responce)
 {
-    I2C & ptrI2C=I2C::getInstance();
-    unsigned int cnt=this->WrongTransactions;
-    unsigned char *array=uuid.data();
-    unsigned int error;
-    std::vector<unsigned char> msg, answer;
-    if (uuid.size()!=4)
+    responce=WriteArray(0x01, uuid, 3);
+    if (responce.size()!=1)
     {
-        return INVALID_DATA;
+        return NOK;
     }
-    msg.push_back(0x01);
-    for(int i=uuid.size()-1;i>=0;i--)
+    if (responce.front()==ACK_I2C)
     {
-        msg.push_back(array[i]);
+        return OK;
     }
-    while(cnt--) {
-        cout<<"prepared "<<cnt<<"\n";
-        error=ptrI2C.transaction(this->addr,msg,3);
-        if (error==0) {
-            answer=ptrI2C.recData();
-            if (answer.size()==1) {
-                return answer.front()==ACK? ACK:NACK;
-            }
-        }
-    }
-    return TR_ERR;
+    return NOK;
 }
-unsigned int ConnModule::SetName(std::vector<unsigned char> data)
+uint8_t ConnModule::SetName(std::vector<unsigned char> data,std::vector<unsigned char> &responce)
+{
+    responce=WriteArray(0x02, data, 3);
+    if (responce.size()!=1)
+    {
+        return NOK;
+    }
+    if (responce.front()==ACK_I2C)
+    {
+        return OK;
+    }
+    return NOK;
+}
+uint8_t ConnModule::StartInit(std::vector<unsigned char> &responce)
+{
+    std::vector<unsigned char> data;
+    cout<<"startinit"<<endl;
+    responce=WriteArray(0x03, data, 3);
+    if (responce.size()!=1)
+    {
+        return NOK;
+    }
+    if (responce.front()==ACK_I2C)
+    {
+        return OK;
+    }
+        return NOK;
+}
+uint8_t ConnModule::WriteString(std::vector<unsigned char> data,std::vector<unsigned char> &responce)
+{
+    responce=WriteArray(0x04, data, 3);
+    if (responce.size()!=1)
+    {
+        return NOK;
+    }
+    if (responce.front()==ACK_I2C)
+    {
+        return OK;
+    }
+    return NOK;
+}
+uint8_t ConnModule::EndInit(std::vector<unsigned char> &responce)
+{
+    std::vector<unsigned char> data;
+    responce=WriteArray(0x05, data, 3);
+    if (responce.size()!=1)
+    {
+        return NOK;
+    }
+    if (responce.front()==ACK_I2C)
+    {
+        return OK;
+    }
+    return NOK;
+}
+uint8_t ConnModule::CheckBonding(std::vector<unsigned char> &responce)
+{
+    std::vector<unsigned char> data;
+    responce=WriteArray(0x09, data, 3);
+    if (responce.size()!=1)
+    {
+        return NOK;
+    }
+    return OK;
+}
+
+uint8_t ConnModule::WriteValue(std::vector<unsigned char> id,std::vector<unsigned char> value,std::vector<unsigned char> &responce)
+{
+    std::vector<unsigned char> data;
+    data.insert(std::end(data), std::begin(id), std::end(id));
+    data.insert(std::end(data), std::begin(value), std::end(value));
+    responce=WriteArray(0x06, data, 3);
+    if (responce.size()!=1)
+    {
+        return NOK;
+    }
+    if (responce.front()==ACK_I2C)
+    {
+        return OK;
+    }
+    return NOK;
+}
+uint8_t ConnModule::StartBonding(std::vector<unsigned char> db,std::vector<unsigned char> &responce)
+{
+    responce=WriteArray(0x08, db, 3);
+    if (responce.size()!=1)
+    {
+        return NOK;
+    }
+    if (responce.front()==ACK_I2C)
+    {
+        return OK;
+    }
+    return NOK;
+}
+uint8_t ConnModule::ReadValue(std::map <uint16_t,uint32_t> answer) /*change order of message*/
+{
+    std::vector<unsigned char> responce;
+    std::vector<unsigned char> data;
+    uint16_t id=0x0000;
+    uint32_t value=0x00000000;
+    responce=WriteArray(0x07, data, 8);
+    if (responce.size()==0)
+    {
+        return NOK;
+    }
+    if (responce.size()%6)
+    {
+        return NOK;
+    }
+    id=responce.front()<<8;
+    responce.erase(responce.begin());
+    id|=responce.front();
+    responce.erase(responce.begin());
+    value=responce.front()<<24;
+    responce.erase(responce.begin());
+    value|=responce.front()<<16;
+    responce.erase(responce.begin());
+    value|=responce.front()<<8;
+    responce.erase(responce.begin());
+    value|=responce.front();
+    responce.erase(responce.begin());
+    answer.insert ( pair<uint16_t,uint32_t>(id,value) );
+    return OK;
+
+}
+uint8_t ConnModule::ReadLastChangedValue(std::map <uint16_t,uint32_t> answer) /*change order of message*/
+{
+    std::vector<unsigned char> responce;
+    std::vector<unsigned char> data;
+    uint16_t id;
+    uint32_t value;
+    responce=WriteArray(0x0C, data, 10);
+    if (responce.size()==0)
+    {
+        return NOK;
+    }
+    if (responce.size()%6)
+    {
+        return NOK;
+    }
+    while(responce.size()!=0)
+    {
+        id=0x0000;
+        value=0x00000000;
+        id=responce.front()<<8;
+        responce.erase(responce.begin());
+        id|=responce.front();
+        responce.erase(responce.begin());
+        value=responce.front()<<24;
+        responce.erase(responce.begin());
+        value|=responce.front()<<16;
+        responce.erase(responce.begin());
+        value|=responce.front()<<8;
+        responce.erase(responce.begin());
+        value|=responce.front();
+        responce.erase(responce.begin());
+        answer.insert ( pair<uint16_t,uint32_t>(id,value) );
+    }
+    return OK;
+}
+
+
+
+
+std::vector<unsigned char> ConnModule::WriteArray(uint8_t command,std::vector<unsigned char> data,unsigned int len)
 {
     I2C & ptrI2C=I2C::getInstance();
     unsigned int cnt=this->WrongTransactions;
     unsigned char *array=data.data();
     unsigned int error;
-    std::vector<unsigned char> msg, answer;
-    if (data.size()!=20) {
-        return INVALID_DATA;
-    }
-    msg.push_back(0x02);
+    std::vector<unsigned char> msg, answer,null;
+    msg.push_back(command);
     for(int i=data.size()-1;i>=0;i--)
     {
         msg.push_back(array[i]);
     }
     while(cnt--) {
-        cout<<"prepared "<<cnt<<"\n";
-        error=ptrI2C.transaction(this->addr,msg,3);
+        error=ptrI2C.transaction(this->addr,msg,len);
         if (error==0) {
             answer=ptrI2C.recData();
-            if (answer.size()==1) {
-                return answer.front()==ACK? ACK:NACK;
-            }
-        }
-    }
-    return TR_ERR;
-}
-unsigned int ConnModule::StartInit(void)
-{
-    I2C & ptrI2C=I2C::getInstance();
-    unsigned int cnt=this->WrongTransactions;
-    unsigned int error;
-    std::vector<unsigned char> msg, answer;
-    msg.push_back(0x03);
-    while(cnt--) {
-        cout<<"prepared "<<cnt<<"\n";
-        error=ptrI2C.transaction(this->addr,msg,3);
-        if (error==0) {
-            answer=ptrI2C.recData();
-            if (answer.size()==1) {
-                return answer.front()==ACK? ACK:NACK;
-            }
-        }
-    }
-    return TR_ERR;
-}
-unsigned int ConnModule::WriteString(std::vector<unsigned char> data)
-{
-    I2C & ptrI2C=I2C::getInstance();
-    unsigned int cnt=this->WrongTransactions;
-    unsigned char *array=data.data();
-    unsigned int error;
-    std::vector<unsigned char> msg, answer;
-    if (data.size()!=20)
-    {
-        return INVALID_DATA;
-    }
-    msg.push_back(0x04);
-    for(int i=data.size()-1;i>=0;i--)
-    {
-        msg.push_back(array[i]);
-    }
-    while(cnt--) {
-        cout<<"prepared "<<cnt<<"\n";
-        error=ptrI2C.transaction(this->addr,msg,3);
-        if (error==0) {
-            answer=ptrI2C.recData();
-            if (answer.size()==1) {
-                switch(answer.front()) {
-                case ACK:   return ACK;
-                case NACK:  return NACK;
-                case BOF:   return BOF;
-                default:    return NACK;
-                }
-            }
-        }
-    }
-    return TR_ERR;
-}
-unsigned int ConnModule::EndInit(void)
-{
-    I2C & ptrI2C=I2C::getInstance();
-    unsigned int cnt=this->WrongTransactions;
-    unsigned int error;
-    std::vector<unsigned char> msg, answer;
-    msg.push_back(0x05);
-    while(cnt--) {
-        cout<<"prepared "<<cnt<<"\n";
-        error=ptrI2C.transaction(this->addr,msg,3);
-        if (error==0) {
-            answer=ptrI2C.recData();
-            if (answer.size()==1) {
-                return answer.front()==ACK? ACK:NACK;
-            }
-        }
-    }
-    return TR_ERR;
-}
-unsigned int ConnModule::WriteValue(std::vector<unsigned char> id,std::vector<unsigned char> value)
-{
-    I2C & ptrI2C=I2C::getInstance();
-    unsigned int cnt=this->WrongTransactions;
-    unsigned char *array_id=id.data();
-    unsigned char *array_value=value.data();
-    unsigned int error;
-    std::vector<unsigned char> msg, answer;
-    if (id.size()!=2) {
-        return INVALID_DATA;
-    }
-    if (value.size()!=4) {
-        return INVALID_DATA;
-    }
-    msg.push_back(0x06);
-    for(int i=id.size()-1;i>=0;i--) {
-        msg.push_back(array_id[i]);
-    }
-    for(int i=value.size()-1;i>=0;i--) {
-        msg.push_back(array_value[i]);
-    }
-    while(cnt--) {
-        cout<<"prepared "<<cnt<<"\n";
-        error=ptrI2C.transaction(this->addr,msg,3);
-        if (error==0) {
-            answer=ptrI2C.recData();
-            if (answer.size()==1) {
-                switch(answer.front()) {
-                case ACK:   return ACK;
-                case NACK:  return NACK;
-                case MSP:   return MSP;
-                default:    return NACK;
-                }
-            }
-        }
-    }
-    return TR_ERR;
-}
-std::vector<unsigned char> ConnModule::ReadValue(std::vector<unsigned char> id) /*change order of message*/
-{
-    I2C & ptrI2C=I2C::getInstance();
-    unsigned int cnt=this->WrongTransactions;
-    unsigned char *array_id=id.data();
-    std::vector<unsigned char> null;
-    unsigned int error;
-    std::vector<unsigned char> msg, answer;
-    if (id.size()!=2) {
-        return null;
-    }
-    msg.push_back(0x07);
-    for(int i=id.size()-1;i>=0;i--) {
-        msg.push_back(array_id[i]);
-    }
-    while(cnt--) {
-        cout<<"prepared "<<cnt<<"\n";
-        error=ptrI2C.transaction(this->addr,msg,6);
-        if (error==0) {
-            answer=ptrI2C.recData();
-            if (answer.size()==4) {
-                return answer;
-            }
-        }
-    }
-    return null;
-}
-std::vector<unsigned char> ConnModule::ReadLastChangedValue(void) /*change order of message*/
-{
-    I2C & ptrI2C=I2C::getInstance();
-    unsigned int cnt=this->WrongTransactions;
-    unsigned int error;
-    std::vector<unsigned char> null;
-    std::vector<unsigned char> msg, answer;
-    msg.push_back(0x0C);
-    while(cnt--) {
-        cout<<"prepared "<<cnt<<"\n";
-        error=ptrI2C.transaction(this->addr,msg,32);
-        if (error==0) {
-            answer=ptrI2C.recData();
+            answer.erase(answer.begin());
             return answer;
         }
     }
     return null;
 }
-unsigned int ConnModule::StartBonding(std::vector<unsigned char> db)
+void ConnModule::PrintLog(uint8_t status, std::string text)
 {
-    I2C & ptrI2C=I2C::getInstance();
-    unsigned int cnt=this->WrongTransactions;
-    unsigned char *array_id=db.data();
-    unsigned int error;
-    std::vector<unsigned char> msg, answer;
-    if (db.size()!=1) {
-        return INVALID_DATA;
+    if (this->m_cb!=0)
+    {
+        m_cb(status,text);
     }
-    msg.push_back(0x08);
-    for(int i=db.size()-1;i>=0;i--) {
-        msg.push_back(array_id[i]);
-    }
-    while(cnt--) {
-        cout<<"prepared "<<cnt<<"\n";
-        error=ptrI2C.transaction(this->addr,msg,3);
-        if (error==0) {
-            answer=ptrI2C.recData();
-            if (answer.size()==1) {
-                return answer.front()==ACK? ACK:NACK;
-            }
-        }
-    }
-    return TR_ERR;
 }
-std::vector<unsigned char> ConnModule::CheckBonding(std::vector<unsigned char> data)
+
+void ConnModule::PrintToCout(uint8_t status, string msg)
 {
-    I2C & ptrI2C=I2C::getInstance();
-    unsigned int cnt=this->WrongTransactions;
-    unsigned int error;
-    std::vector<unsigned char> null;
-    std::vector<unsigned char> msg, answer;
-    msg.push_back(0x09);
-    while(cnt--) {
-        cout<<"prepared "<<cnt<<"\n";
-        error=ptrI2C.transaction(this->addr,msg,3);
-        if (error==0) {
-            answer=ptrI2C.recData();
-            if (answer.size()==1) {
-                return answer;
-            }
-        }
-    }
-    return null;
+    cout<<status<<msg<<endl;
 }
 
 // BoardModule class
 // Construction and destruction
-BoardModule::BoardModule(std::string filename,struct i2c_client *client) {
+BoardModule::BoardModule(std::string filename,CallbackFunction cb) {
     I2C &ptrI2C = I2C::getInstance();
-    ptrI2C.begin(filename, client);
+    this->m_cb=0;
+    this->m_cb=cb;
+    ptrI2C.begin(filename,cb);
     std::vector<unsigned char> address;
     address.push_back(0x01);
     this->addr=address;
@@ -463,107 +522,102 @@ void BoardModule::setAddress(std::vector<unsigned char> addr)
 {
     this->addr=addr;
 }
-std::vector<unsigned char> BoardModule::GetVersion(void)
+uint8_t BoardModule::GetVersion(std::vector<unsigned char> &responce)
 {
-    I2C & ptrI2C=I2C::getInstance();
-    unsigned int cnt=this->WrongTransactions;
-    unsigned int error;
-    std::vector<unsigned char> msg, answer, null;
-    msg.push_back(0x01);
-    while(cnt--) {
-        cout<<"prepared "<<cnt<<"\n";
-        error=ptrI2C.transaction(this->addr,msg,4);
-        if (error==0) {
-            answer=ptrI2C.recData();
-            if (answer.size()==2) {
-                //if answer
-                return answer;
-            }
-        }
+    std::vector<unsigned char> msg;
+    responce = WriteArray(0x01, msg, 3);
+    if (responce.size() != 1) {
+        return NOK;
     }
-    return null;
-}
-std::vector<unsigned char> BoardModule::GetTools(void)
-{
-    I2C & ptrI2C=I2C::getInstance();
-    unsigned int cnt=this->WrongTransactions;
-    unsigned int error;
-    std::vector<unsigned char> msg, answer, null;
-    msg.push_back(0x02);
-    while(cnt--) {
-        cout<<"prepared "<<cnt<<"\n";
-        error=ptrI2C.transaction(this->addr,msg,4);
-        if (error==0) {
-            answer=ptrI2C.recData();
-            if (answer.size()==2) {
-                //if answer
-                return answer;
-            }
-        }
+    if (responce.front() == ACK_I2C) {
+        return OK;
     }
-    return null;
+    return NOK;
 }
-std::vector<unsigned char> BoardModule::GetPower(void)
+uint8_t BoardModule::GetTools(std::vector<unsigned char> &responce)
 {
-    I2C & ptrI2C=I2C::getInstance();
-    unsigned int cnt=this->WrongTransactions;
-    unsigned int error;
-    std::vector<unsigned char> msg, answer, null;
-    msg.push_back(0x03);
-    while(cnt--) {
-        cout<<"prepared "<<cnt<<"\n";
-        error=ptrI2C.transaction(this->addr,msg,3);
-        if (error==0) {
-            answer=ptrI2C.recData();
-            if (answer.size()==2) {
-                //if answer
-                return answer;
-            }
-        }
+    std::vector<unsigned char> msg;
+    responce = WriteArray(0x01, msg, 3);
+    if (responce.size() != 1) {
+        return NOK;
     }
-    return null;
+    if (responce.front() == ACK_I2C) {
+        return OK;
+    }
+    return NOK;
 }
-unsigned int BoardModule::SetEnergy(unsigned char energy)
+uint8_t BoardModule::GetPower(std::vector<unsigned char> &responce)
 {
-    I2C & ptrI2C=I2C::getInstance();
-    unsigned int cnt=this->WrongTransactions;
-    unsigned int error;
-    std::vector<unsigned char> msg, answer;
-    msg.push_back(0x01);
+    std::vector<unsigned char> msg;
+    responce = WriteArray(0x03, msg, 3);
+    if (responce.size() != 1) {
+        return NOK;
+    }
+    if (responce.front() == ACK_I2C) {
+        return OK;
+    }
+    return NOK;
+}
+uint8_t BoardModule::SetEnergy(unsigned char energy,std::vector<unsigned char> &responce)
+{
+    std::vector<unsigned char> msg;
     msg.push_back(energy);
-    while(cnt--) {
-        cout<<"prepared "<<cnt<<"\n";
-        error=ptrI2C.transaction(this->addr,msg,3);
-        if (error==0) {
-            answer=ptrI2C.recData();
-            if (answer.size()==1) {
-                return answer.front()==ACK? ACK:NACK;
-            }
-        }
+    responce = WriteArray(0x01, msg, 3);
+    if (responce.size() != 1) {
+        return NOK;
     }
-    return TR_ERR;
+    if (responce.front() == ACK_I2C) {
+        return OK;
+    }
+    return NOK;
 }
-unsigned int BoardModule::SetVolume(unsigned char volume)
+uint8_t BoardModule::SetVolume(unsigned char volume,std::vector<unsigned char> &responce)
+{
+    std::vector<unsigned char> msg;
+    msg.push_back(volume);
+    responce = WriteArray(0x01, msg, 3);
+    if (responce.size() != 1) {
+        return NOK;
+    }
+    if (responce.front() == ACK_I2C) {
+        return OK;
+    }
+    return NOK;
+}
+std::vector<unsigned char> BoardModule::WriteArray(uint8_t command,std::vector<unsigned char> data,unsigned int len)
 {
     I2C & ptrI2C=I2C::getInstance();
     unsigned int cnt=this->WrongTransactions;
+    unsigned char *array=data.data();
     unsigned int error;
-    std::vector<unsigned char> msg, answer;
-    msg.push_back(0x01);
-    msg.push_back(volume);
+    std::vector<unsigned char> msg, answer,null;
+    msg.push_back(command);
+    for(int i=data.size()-1;i>=0;i--)
+    {
+        msg.push_back(array[i]);
+    }
     while(cnt--) {
-        cout<<"prepared "<<cnt<<"\n";
-        error=ptrI2C.transaction(this->addr,msg,3);
+        error=ptrI2C.transaction(this->addr,msg,len);
         if (error==0) {
             answer=ptrI2C.recData();
-            if (answer.size()==1) {
-                return answer.front()==ACK? ACK:NACK;
-            }
+            answer.erase(answer.begin());
+            return answer;
         }
     }
-    return TR_ERR;
+    return null;
+}
+void BoardModule::PrintLog(uint8_t status, std::string text)
+{
+    if (this->m_cb!=0)
+    {
+        m_cb(status,text);
+    }
 }
 
+void BoardModule::PrintToCout(uint8_t status, string msg)
+{
+    cout<<status<<msg<<endl;
+}
 /*int main(void)
 {
     std::string filename="/dev/ttyUSB0";
