@@ -187,11 +187,11 @@ int I2C::SendPacket(std::vector<unsigned char> address,std::vector<unsigned char
     crc_rec.push_back(temp_addr[0]<<1);
     for(int i=0;i<this->LastRecMsg.size();i++)
     {
-        crc_tr.push_back(temp_rec[i]);
+        crc_rec.push_back(temp_rec[i]);
         printf("%02x\n",temp_rec[i]);
     }
-    printf("%02x\n",CRC8(crc_tr.data(),crc_tr.size()));
-    if(CRC8(crc_tr.data(),crc_tr.size()))
+    printf("%02x\n",CRC8(crc_rec.data(),crc_rec.size()));
+    if(CRC8(crc_rec.data(),crc_rec.size()))
     {
         return NOK;
     }
