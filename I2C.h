@@ -84,7 +84,7 @@ class ConnModule
 {
 public:
     std::vector<unsigned char>getAddress();
-    std::vector<unsigned char> setAddress(std::vector<unsigned char>addr);
+    void setAddress(std::vector<unsigned char>addr);
     ConnModule(std::string filename,CallbackFunction cb);
     ~ConnModule();
     uint8_t SetUUID(std::vector<unsigned char> uuid,std::vector<unsigned char> &responce);
