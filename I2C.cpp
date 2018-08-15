@@ -88,7 +88,8 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
 
     /*PrintLog(Debug_log,(std::string) __func__+  (std::string)"Send to address:"
                        +(std::string)address +(std::string)"Data: "+(std::string)buffer+(std::string)"\n");*/
-    unsigned char buf_rec[20]={0x00,0x00,0x00};
+    unsigned char buf_rec[20]={0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+            ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
     std::string data_send,data_rec;
     data_send=data_send+(std::string)(address.front());
     for (int cnt=0;cnt<buffer.size();cnt++)
@@ -99,11 +100,11 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
                        +data_send +(std::string)"\n");
     i2c_rdwr_ioctl_data message;
     i2c_msg message_packet[2];
-    message_packet[0].addr=address.front();
+    message_packet[0].addr=0x7f&address.front();
     message_packet[0].flags=0;
     message_packet[0].len=buffer.size();
     message_packet[0].buf=buffer.data();
-    message_packet[1].addr=address.front();
+    message_packet[1].addr=0x7f&address.front();
     message_packet[1].flags=I2C_M_RD;//I2C_M_RD|I2C_M_RECV_LEN;I2C_M_NOSTART
     message_packet[1].buf=buf_rec;
     message_packet[1].len=10;
@@ -137,6 +138,7 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
     if (file == -1)
     {
         PrintLog(Warning_log,(std::string) __func__+  (std::string)"Device open error\n");
+        return NOK;
         //perror("/dev/i2c-2");
     }
     if (ioctl(file, I2C_SLAVE, address.front()) < 0)
@@ -285,7 +287,10 @@ std::vector<unsigned char> ConnModule::getAddress(void) {
 }
 void ConnModule::setAddress(std::vector<unsigned char>addr)
 {
-    this->addr=addr;
+    unsigned char temp_addr=addr.front();
+    addr.pop_back();
+    addr.push_back(temp_addr&0x7f);
+    this->addr=0x7f&(addr);
 }
 uint8_t ConnModule::SetUUID(std::vector<unsigned char> uuid,std::vector<unsigned char> &responce)
 {
@@ -551,7 +556,10 @@ std::vector<unsigned char> BoardModule::getAddress(void)
 }
 void BoardModule::setAddress(std::vector<unsigned char> addr)
 {
-    this->addr=addr;
+    unsigned char temp_addr=addr.front();
+    addr.pop_back();
+    addr.push_back(temp_addr&0x7f);
+    this->addr=0x7f&(addr);
 }
 uint8_t BoardModule::GetVersion(std::vector<unsigned char> &responce)
 {
@@ -664,22 +672,24 @@ void BoardModule::PrintToCout(uint8_t status, string msg)
 {
     cout<<status<<msg<<endl;
 }
-/*int main(void)
+#ifndef QTAPP
+#include "I2C.h"
+void PrintToC(uint8_t status, string msg)
 {
-    std::string filename="/dev/ttyUSB0";
-    struct i2c_client *i2c_client;
-    I2C & test =I2C::getInstance();
-    test.begin(filename, i2c_client);
+    cout<<status<<msg<<endl;
+}
+int main(void)
+{
+    std::string filename="/dev/i2c-2";
+    cout<<"1"<<endl;
+    ConnModule mcu(filename,PrintToC);
+    cout<<"2"<<endl;
     std::vector<unsigned char> data;
-    std::vector<unsigned char> address;
-    address.push_back(0x01);
-    std::vector<unsigned char> received;
-    ConnModule module(filename, i2c_client);
-    unsigned char value= 1;
-    data.push_back( value);
-    address.push_back( 0x01);
-    cout<<"Here works0";
-    test.transaction(address,data,3);
-    module.SetUUID(data);
+    mcu.StartInit(data);
+    cout<<"3\n";
+    printf("%d\n",data.size());
     return 1;
-}*/
+}
+
+#endif
+
