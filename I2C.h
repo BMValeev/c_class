@@ -84,7 +84,7 @@ class ConnModule
 {
 public:
     std::vector<unsigned char>getAddress();
-    void setAddress(std::vector<unsigned char>addr);
+    void setAddress(std::vector<unsigned char> addr);
     ConnModule(std::string filename,CallbackFunction cb);
     ~ConnModule();
     uint8_t SetUUID(std::vector<unsigned char> uuid,std::vector<unsigned char> &responce);
@@ -112,7 +112,7 @@ class BoardModule
 {
 public:
     std::vector<unsigned char>getAddress();
-    void setAddress(std::vector<unsigned char>addr);
+    void setAddress(std::vector<unsigned char> addr);
     BoardModule(std::string filename,CallbackFunction cb) ;
     ~BoardModule();
     uint8_t GetVersion(std::vector<unsigned char> &responce);

@@ -15,7 +15,6 @@ I2C::I2C() {
 }
 I2C::~I2C() { }
 I2C & I2C::getInstance() {
-    PrintLog(Debug_log,(std::string) __func__+  (std::string)"I2C instance get\n");
     if (!theOneTrueInstance) initInstance();
     return *theOneTrueInstance;
 }
@@ -91,20 +90,21 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
     unsigned char buf_rec[20]={0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
             ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
     std::string data_send,data_rec;
-    data_send=data_send+(std::string)(address.front());
+    //data_send=data_send+(std::string)(address.front());
     for (int cnt=0;cnt<buffer.size();cnt++)
     {
-        data_send=data_send+(std::string)(buffer.data()[cnt]);
+        //data_send=data_send+(std::string)(buffer.data()[cnt]);
     }
     PrintLog(Debug_log,(std::string) __func__+  (std::string)"Send message"
                        +data_send +(std::string)"\n");
     i2c_rdwr_ioctl_data message;
     i2c_msg message_packet[2];
-    message_packet[0].addr=0x7f&address.front();
+    printf("%02x\n",address.front());
+    message_packet[0].addr=address.front();
     message_packet[0].flags=0;
     message_packet[0].len=buffer.size();
     message_packet[0].buf=buffer.data();
-    message_packet[1].addr=0x7f&address.front();
+    message_packet[1].addr=address.front();
     message_packet[1].flags=I2C_M_RD;//I2C_M_RD|I2C_M_RECV_LEN;I2C_M_NOSTART
     message_packet[1].buf=buf_rec;
     message_packet[1].len=10;
@@ -167,7 +167,7 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
     }
     for (cnt=0;cnt<this->LastRecMsg.size();cnt++)
     {
-        data_rec=data_rec+(std::string)(this->LastRecMsg.data()[cnt]);
+        //data_rec=data_rec+(std::string)(this->LastRecMsg.data()[cnt]);
     }
     PrintLog(Debug_log,(std::string) __func__+  (std::string)"Send message"
                        +data_rec +(std::string)"\n");
@@ -263,7 +263,8 @@ unsigned int I2C::transaction(std::vector<unsigned char> address,std::vector<uns
 
 // ConnModule class
 // Construction and destruction
-ConnModule::ConnModule(std::string filename,CallbackFunction cb) {
+ConnModule::ConnModule(std::string filename,CallbackFunction cb)
+{
     I2C &ptrI2C = I2C::getInstance();
     std::vector<unsigned char> address;
     cout<<"3"<<endl;
@@ -285,12 +286,12 @@ ConnModule::~ConnModule() {
 std::vector<unsigned char> ConnModule::getAddress(void) {
     return this->addr;
 }
-void ConnModule::setAddress(std::vector<unsigned char>addr)
+void ConnModule::setAddress(std::vector<unsigned char> addr)
 {
     unsigned char temp_addr=addr.front();
     addr.pop_back();
     addr.push_back(temp_addr&0x7f);
-    this->addr=0x7f&(addr);
+    this->addr=(addr);
 }
 uint8_t ConnModule::SetUUID(std::vector<unsigned char> uuid,std::vector<unsigned char> &responce)
 {
@@ -536,13 +537,15 @@ void ConnModule::PrintToCout(uint8_t status, string msg)
 
 // BoardModule class
 // Construction and destruction
-BoardModule::BoardModule(std::string filename,CallbackFunction cb) {
+BoardModule::BoardModule(std::string filename,CallbackFunction cb)
+{
     I2C &ptrI2C = I2C::getInstance();
-    this->m_cb=0;
-    this->m_cb=cb;
+    //this->m_cb=0;
+    //this->m_cb=cb;
     ptrI2C.begin(filename,cb);
     std::vector<unsigned char> address;
-    address.push_back(0x01);
+    address.push_back(0b01001000);
+    printf("%02x\n",address.front());
     this->addr=address;
 }
 BoardModule::~BoardModule()
@@ -559,37 +562,29 @@ void BoardModule::setAddress(std::vector<unsigned char> addr)
     unsigned char temp_addr=addr.front();
     addr.pop_back();
     addr.push_back(temp_addr&0x7f);
-    this->addr=0x7f&(addr);
+    this->addr=(addr);
 }
 uint8_t BoardModule::GetVersion(std::vector<unsigned char> &responce)
 {
     std::vector<unsigned char> msg;
-    responce = WriteArray(0x01, msg, 3);
-    if (responce.size() != 1) {
+    responce = WriteArray(0x01, msg, 4);
+    if (responce.size() != 2) {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"GetVersion failed\n");
         return NOK;
     }
-    if (responce.front() == ACK_I2C) {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"GetVersion succesfuly\n");
         return OK;
-    }
-    PrintLog(Debug_log,(std::string) __func__ +(std::string)"GetVersion failed\n");
-    return NOK;
 }
 uint8_t BoardModule::GetTools(std::vector<unsigned char> &responce)
 {
     std::vector<unsigned char> msg;
-    responce = WriteArray(0x01, msg, 3);
-    if (responce.size() != 1) {
+    responce = WriteArray(0x02, msg, 4);
+    if (responce.size() != 2) {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"GetTools failed\n");
         return NOK;
     }
-    if (responce.front() == ACK_I2C) {
-        PrintLog(Debug_log,(std::string) __func__ +(std::string)"GetTools succesfuly\n");
-        return OK;
-    }
-    PrintLog(Debug_log,(std::string) __func__ +(std::string)"GetTools failed\n");
-    return NOK;
+    PrintLog(Debug_log,(std::string) __func__ +(std::string)"GetTools succesfuly\n");
+    return OK;
 }
 uint8_t BoardModule::GetPower(std::vector<unsigned char> &responce)
 {
@@ -599,18 +594,14 @@ uint8_t BoardModule::GetPower(std::vector<unsigned char> &responce)
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"GetPower failed\n");
         return NOK;
     }
-    if (responce.front() == ACK_I2C) {
-        PrintLog(Debug_log,(std::string) __func__ +(std::string)"GetPower succesfuly\n");
-        return OK;
-    }
-    PrintLog(Debug_log,(std::string) __func__ +(std::string)"GetPower failed\n");
-    return NOK;
+    PrintLog(Debug_log,(std::string) __func__ +(std::string)"GetPower succesfuly\n");
+    return OK;
 }
 uint8_t BoardModule::SetEnergy(unsigned char energy,std::vector<unsigned char> &responce)
 {
     std::vector<unsigned char> msg;
     msg.push_back(energy);
-    responce = WriteArray(0x01, msg, 3);
+    responce = WriteArray(0x04, msg, 3);
     if (responce.size() != 1) {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"SetEnergy failed\n");
         return NOK;
@@ -626,7 +617,7 @@ uint8_t BoardModule::SetVolume(unsigned char volume,std::vector<unsigned char> &
 {
     std::vector<unsigned char> msg;
     msg.push_back(volume);
-    responce = WriteArray(0x01, msg, 3);
+    responce = WriteArray(0x05, msg, 3);
     if (responce.size() != 1) {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"SetVolume failed\n");
         return NOK;
@@ -672,6 +663,7 @@ void BoardModule::PrintToCout(uint8_t status, string msg)
 {
     cout<<status<<msg<<endl;
 }
+/*
 #ifndef QTAPP
 #include "I2C.h"
 void PrintToC(uint8_t status, string msg)
@@ -693,3 +685,4 @@ int main(void)
 
 #endif
 
+*/
