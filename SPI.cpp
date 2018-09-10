@@ -574,11 +574,8 @@ uint8_t MCU::SendDoubleInt(uint8_t command,uint16_t value1,uint16_t value2)
     return TR_ERR;
 }
 
-
-
-
 #ifndef QTAPP
-#include "I2C.h"
+// Stand-alone compile
 void PrintToC(uint8_t status, string msg)
 {
     cout<<status<<msg<<endl;
@@ -587,12 +584,11 @@ int main(void)
 {
     std::string filename="/dev/spidev1.0";
     MCU mcu(filename,PrintToC);
-    std::vector data;
+    std::vector<unsigned char> data;
     unsigned char value= 1;
     data.push_back( value);
     cout<<"Here works0";
     mcu.SetStanby(1);
     return 1;
 }
-
-#endif
+#endif // QTAPP

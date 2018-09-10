@@ -30,6 +30,9 @@ using namespace std;
 #define NACK 0x02
 #define NOK 0x01
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+
+#define QTAPP // flags that is used by submodules to determine wether they are compiled within application or stand-alone
+
 enum Log_status { Info_log = 1, Debug_log=2, Warning_log= 3,Critical_log=4 };
 // Low level class that implements basic information exchange via SPI on Hamming board
 typedef std::function<void(uint8_t, std::string)> CallbackFunction;

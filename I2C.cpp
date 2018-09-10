@@ -663,9 +663,8 @@ void BoardModule::PrintToCout(uint8_t status, string msg)
 {
     cout<<status<<msg<<endl;
 }
-/*
+
 #ifndef QTAPP
-#include "I2C.h"
 void PrintToC(uint8_t status, string msg)
 {
     cout<<status<<msg<<endl;
@@ -679,10 +678,7 @@ int main(void)
     std::vector<unsigned char> data;
     mcu.StartInit(data);
     cout<<"3\n";
-    printf("%d\n",data.size());
+    printf("%zu\n",data.size());
     return 1;
 }
-
-#endif
-
-*/
+#endif // QTAPP

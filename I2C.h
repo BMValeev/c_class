@@ -40,7 +40,17 @@ using namespace std;
 
 #define OK 0x00
 #define NOK 0x01
+
+#define QTAPP // flags that is used by submodules to determine wether they are compiled within application or stand-alone
+
+#ifndef QTAPP
+// Stand-alone compile
 enum Log_status { Info_log = 1, Debug_log=2, Warning_log= 3,Critical_log=4 };
+#else
+// Within QT app compile
+#include "SPI.h"
+#endif // QTAPP
+
 typedef std::function<void(uint8_t, std::string)> CallbackFunction;
 class I2C
 {
