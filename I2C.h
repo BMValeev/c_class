@@ -105,8 +105,8 @@ public:
     uint8_t CheckBonding(std::vector<unsigned char> &response);
     uint8_t WriteValue(std::vector<unsigned char> id,std::vector<unsigned char> value,std::vector<unsigned char> &response);
     uint8_t StartBonding(std::vector<unsigned char> db,std::vector<unsigned char> &response);
-    uint8_t ReadValue(std::map <uint16_t,uint32_t> answer);
-    uint8_t ReadLastChangedValue(std::map <uint16_t,uint32_t> answer);
+    uint8_t ReadValue(uint16_t id_rec, std::map <uint16_t,std::vector<unsigned char>> answer);
+    uint8_t ReadLastChangedValue(std::map <uint16_t,std::vector<unsigned char>> answer);
 
 
 private:

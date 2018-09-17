@@ -424,10 +424,10 @@ uint8_t ConnModule::StartBonding(std::vector<unsigned char> db, std::vector<unsi
     PrintLog(Debug_log,(std::string) __func__ +(std::string)"StartBonding failed\n");
     return NOK;
 }
-uint8_t ConnModule::ReadValue(uint16_t id_rec, std::map <uint16_t,uint32_t> answer) /*change order of message*/
+uint8_t ConnModule::ReadValue(uint16_t id_rec, std::map <uint16_t,std::vector<unsigned char> > answer) /*change order of message*/
 {
     std::vector<unsigned char> responce;
-    std::vector<unsigned char> data;
+    std::vector<unsigned char> data,val;
     uint16_t id=0x0000;
     uint32_t value=0x00000000;
     data.push_back(id_rec&0xff);
@@ -448,23 +448,23 @@ uint8_t ConnModule::ReadValue(uint16_t id_rec, std::map <uint16_t,uint32_t> answ
     id|=responce.front();
     responce.erase(responce.begin());*/
     id=id_rec;
-    value=responce.front()<<24;
+    val.push_back(responce.front());
     responce.erase(responce.begin());
-    value|=responce.front()<<16;
+    val.push_back(responce.front());
     responce.erase(responce.begin());
-    value|=responce.front()<<8;
+    val.push_back(responce.front());
     responce.erase(responce.begin());
-    value|=responce.front();
+    val.push_back(responce.front());
     responce.erase(responce.begin());
-    answer.insert ( pair<uint16_t,uint32_t>(id,value) );
+    answer.insert (pair<uint16_t,std::vector<unsigned char>>(id_rec,val));
     PrintLog(Debug_log,(std::string) __func__ +(std::string)"ReadValue succesfuly\n");
     return OK;
 
 }
-uint8_t ConnModule::ReadLastChangedValue(std::map <uint16_t,uint32_t> answer) /*change order of message*/
+uint8_t ConnModule::ReadLastChangedValue(std::map <uint16_t,std::vector<unsigned char>> answer) /*change order of message*/
 {
     std::vector<unsigned char> responce;
-    std::vector<unsigned char> data;
+    std::vector<unsigned char> data,val;
     uint16_t id;
     uint32_t value;
     responce=WriteArray(0x0C, data, 10);
@@ -482,19 +482,20 @@ uint8_t ConnModule::ReadLastChangedValue(std::map <uint16_t,uint32_t> answer) /*
     {
         id=0x0000;
         value=0x00000000;
+        val.clear();
         id=responce.front()<<8;
         responce.erase(responce.begin());
         id|=responce.front();
         responce.erase(responce.begin());
-        value=responce.front()<<24;
+        val.push_back(responce.front());
         responce.erase(responce.begin());
-        value|=responce.front()<<16;
+        val.push_back(responce.front());
         responce.erase(responce.begin());
-        value|=responce.front()<<8;
+        val.push_back(responce.front());
         responce.erase(responce.begin());
-        value|=responce.front();
+        val.push_back(responce.front());
         responce.erase(responce.begin());
-        answer.insert ( pair<uint16_t,uint32_t>(id,value) );
+        answer.insert ( pair<uint16_t,std::vector<unsigned char>>(id,val) );
     }
     PrintLog(Debug_log,(std::string) __func__ +(std::string)"ReadLastChangedValue succesfuly\n");
     return OK;
