@@ -424,27 +424,30 @@ uint8_t ConnModule::StartBonding(std::vector<unsigned char> db, std::vector<unsi
     PrintLog(Debug_log,(std::string) __func__ +(std::string)"StartBonding failed\n");
     return NOK;
 }
-uint8_t ConnModule::ReadValue(std::map <uint16_t,uint32_t> answer) /*change order of message*/
+uint8_t ConnModule::ReadValue(uint16_t id_rec, std::map <uint16_t,uint32_t> answer) /*change order of message*/
 {
     std::vector<unsigned char> responce;
     std::vector<unsigned char> data;
     uint16_t id=0x0000;
     uint32_t value=0x00000000;
+    data.push_back(id_rec&0xff);
+    data.push_back((id_rec>>8)&0xff);
     responce=WriteArray(0x07, data, 8);
     if (responce.size()==0)
     {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"ReadValue failed\n");
         return NOK;
     }
-    if (responce.size()%6)
+    if (responce.size()%4)
     {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"ReadValue failed\n");
         return NOK;
     }
-    id=responce.front()<<8;
+    /*id=responce.front()<<8;
     responce.erase(responce.begin());
     id|=responce.front();
-    responce.erase(responce.begin());
+    responce.erase(responce.begin());*/
+    id=id_rec;
     value=responce.front()<<24;
     responce.erase(responce.begin());
     value|=responce.front()<<16;
