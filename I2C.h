@@ -97,14 +97,14 @@ public:
     void setAddress(std::vector<unsigned char> addr);
     ConnModule(std::string filename,CallbackFunction cb);
     ~ConnModule();
-    uint8_t SetUUID(std::vector<unsigned char> uuid,std::vector<unsigned char> &responce);
-    uint8_t SetName(std::vector<unsigned char> data,std::vector<unsigned char> &responce);
-    uint8_t StartInit(std::vector<unsigned char> &responce);
-    uint8_t WriteString(std::vector<unsigned char> data,std::vector<unsigned char> &responce);
-    uint8_t EndInit(std::vector<unsigned char> &responce);
-    uint8_t CheckBonding(std::vector<unsigned char> &responce);
-    uint8_t WriteValue(std::vector<unsigned char> id,std::vector<unsigned char> value,std::vector<unsigned char> &responce);
-    uint8_t StartBonding(std::vector<unsigned char> db,std::vector<unsigned char> &responce);
+    uint8_t SetUUID(std::vector<unsigned char> uuid,std::vector<unsigned char> &response);
+    uint8_t SetName(std::vector<unsigned char> data,std::vector<unsigned char> &response);
+    uint8_t StartInit(std::vector<unsigned char> &response);
+    uint8_t WriteString(std::vector<unsigned char> data,std::vector<unsigned char> &response);
+    uint8_t EndInit(std::vector<unsigned char> &response);
+    uint8_t CheckBonding(std::vector<unsigned char> &response);
+    uint8_t WriteValue(std::vector<unsigned char> id,std::vector<unsigned char> value,std::vector<unsigned char> &response);
+    uint8_t StartBonding(std::vector<unsigned char> db,std::vector<unsigned char> &response);
     uint8_t ReadValue(std::map <uint16_t,uint32_t> answer);
     uint8_t ReadLastChangedValue(std::map <uint16_t,uint32_t> answer);
 
@@ -125,11 +125,11 @@ public:
     void setAddress(std::vector<unsigned char> addr);
     BoardModule(std::string filename,CallbackFunction cb) ;
     ~BoardModule();
-    uint8_t GetVersion(std::vector<unsigned char> &responce);
-    uint8_t GetTools(std::vector<unsigned char> &responce);
-    uint8_t GetPower(std::vector<unsigned char> &responce);
-    uint8_t SetEnergy(unsigned char energy,std::vector<unsigned char> &responce);
-    uint8_t SetVolume(unsigned char volume,std::vector<unsigned char> &responce);
+    uint8_t GetVersion(std::vector<unsigned char> &response);
+    uint8_t GetTools(std::vector<unsigned char> &response);
+    uint8_t GetPower(std::vector<unsigned char> &response);
+    uint8_t SetEnergy(unsigned char energy,std::vector<unsigned char> &response);
+    uint8_t SetVolume(unsigned char volume,std::vector<unsigned char> &response);
 
 
 private:
