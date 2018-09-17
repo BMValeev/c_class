@@ -561,6 +561,18 @@ std::vector<unsigned char> BoardModule::getAddress(void)
 {
     return this->addr;
 }
+uint8_t BoardModule::SetBonding(unsigned char enable,std::vector<unsigned char> &response)
+{
+    std::vector<unsigned char> msg;
+    msg.push_back(enable);
+    response = WriteArray(0x06, msg, 4);
+    if (response.size() != 2) {
+        PrintLog(Debug_log,(std::string) __func__ +(std::string)"GetVersion failed\n");
+        return NOK;
+    }
+    PrintLog(Debug_log,(std::string) __func__ +(std::string)"GetVersion succesfuly\n");
+    return OK;
+}
 void BoardModule::setAddress(std::vector<unsigned char> addr)
 {
     unsigned char temp_addr=addr.front();

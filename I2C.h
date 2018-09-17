@@ -126,6 +126,7 @@ public:
     BoardModule(std::string filename,CallbackFunction cb) ;
     ~BoardModule();
     uint8_t GetVersion(std::vector<unsigned char> &response);
+    uint8_t SetBonding(unsigned char enable,std::vector<unsigned char> &response);
     uint8_t GetTools(std::vector<unsigned char> &response);
     uint8_t GetPower(std::vector<unsigned char> &response);
     uint8_t SetEnergy(unsigned char energy,std::vector<unsigned char> &response);
