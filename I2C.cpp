@@ -460,37 +460,36 @@ uint8_t ConnModule::ReadValue(std::map <uint16_t,uint32_t> answer) /*change orde
 }
 uint8_t ConnModule::ReadLastChangedValue(std::map <uint16_t,uint32_t> answer) /*change order of message*/
 {
-    std::vector<unsigned char> responce;
+    std::vector<unsigned char> response;
     std::vector<unsigned char> data;
     uint16_t id;
     uint32_t value;
-    responce=WriteArray(0x0C, data, 10);
-    if (responce.size()==0)
+    response=WriteArray(0x0C, data, 10);
+    if (response.size()==0)
+    {
+        return OK;
+    }
+    if (response.size()%6)
     {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"ReadLastChangedValue failed\n");
         return NOK;
     }
-    if (responce.size()%6)
-    {
-        PrintLog(Debug_log,(std::string) __func__ +(std::string)"ReadLastChangedValue failed\n");
-        return NOK;
-    }
-    while(responce.size()!=0)
+    while(response.size()!=0)
     {
         id=0x0000;
         value=0x00000000;
-        id=responce.front()<<8;
-        responce.erase(responce.begin());
-        id|=responce.front();
-        responce.erase(responce.begin());
-        value=responce.front()<<24;
-        responce.erase(responce.begin());
-        value|=responce.front()<<16;
-        responce.erase(responce.begin());
-        value|=responce.front()<<8;
-        responce.erase(responce.begin());
-        value|=responce.front();
-        responce.erase(responce.begin());
+        id=response.front()<<8;
+        response.erase(response.begin());
+        id|=response.front();
+        response.erase(response.begin());
+        value=response.front()<<24;
+        response.erase(response.begin());
+        value|=response.front()<<16;
+        response.erase(response.begin());
+        value|=response.front()<<8;
+        response.erase(response.begin());
+        value|=response.front();
+        response.erase(response.begin());
         answer.insert ( pair<uint16_t,uint32_t>(id,value) );
     }
     PrintLog(Debug_log,(std::string) __func__ +(std::string)"ReadLastChangedValue succesfuly\n");

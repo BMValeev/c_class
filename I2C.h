@@ -108,7 +108,6 @@ public:
     uint8_t ReadValue(std::map <uint16_t,uint32_t> answer);
     uint8_t ReadLastChangedValue(std::map <uint16_t,uint32_t> answer);
 
-
 private:
     uint16_t WrongTransactions=3;
     std::vector<unsigned char> addr;
