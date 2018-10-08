@@ -56,20 +56,6 @@ void I2C::PrintToCout(uint8_t status, string msg)
 {
     cout<<status<<msg<<endl;
 }
-/*Safe functions*/
-unsigned char I2C::CRC8(unsigned char *buffer, unsigned int len)
-{
-    unsigned char crc = 0x82;
-    unsigned int i;
-
-    while (len--)
-    {
-        crc ^= *buffer++;
-        for (i = 0; i < 8; i++)
-            crc = (crc & 1)? (crc >> 1) ^ 0x8c : crc >> 1;
-    }
-    return crc;
-}
 
 /*Unsafe Methods*/
 int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned char> buffer, unsigned int rlen)
@@ -179,7 +165,7 @@ int I2C::SendRaw(std::vector<unsigned char> address,std::vector<unsigned char>, 
     this->LastRecMsg.clear();
     this->LastRecMsg.push_back(0x02);
     this->LastRecMsg.push_back(0x02);
-    this->LastRecMsg.push_back(CRC8(this->LastRecMsg.data(),2));
+    this->LastRecMsg.push_back(CRC::crc8(this->LastRecMsg.data(),2));
     return 0;
 }
 
@@ -200,7 +186,7 @@ int I2C::SendPacket(std::vector<unsigned char> address,std::vector<unsigned char
     {
         package.push_back(temp_buf[i]);
     }
-    package.push_back(CRC8(crc_tr.data(),crc_tr.size()));
+    package.push_back(CRC::crc8(crc_tr.data(),crc_tr.size()));
     CleanRecMsg();
     if(SendRaw_new(address, package,len))
     {
@@ -213,8 +199,8 @@ int I2C::SendPacket(std::vector<unsigned char> address,std::vector<unsigned char
         crc_rec.push_back(temp_rec[i]);
         printf("%02x\n",temp_rec[i]);
     }
-    printf("%02x\n",CRC8(crc_rec.data(),crc_rec.size()));
-    if(CRC8(crc_rec.data(),crc_rec.size()))
+    printf("%02x\n",CRC::crc8(crc_rec.data(),crc_rec.size()));
+    if(CRC::crc8(crc_rec.data(),crc_rec.size()))
     {
         PrintLog(Warning_log,(std::string) __func__ +(std::string)"CRC error\n");
         return NOK;

@@ -20,6 +20,8 @@ using namespace std;
 #include <vector>
 #include <algorithm>
 
+#include "crc.h"
+
 #define MUTEX_BLOCKED 127
 #define INVALID_DATA 0x03
 #define ACK 0x30
@@ -66,7 +68,6 @@ private:
     int SendRaw_new(unsigned char *buffer, unsigned int len, uint8_t ans_len);
     void SetDeviceName(std::string Name);
     void CleanRecMsg(void);
-    unsigned char CRC8(unsigned char *buffer, unsigned int len);
     int SendPacket(std::vector<unsigned char> Buffer, uint8_t ans_len);
     CallbackFunction m_cb = SPI::PrintToCout;
 };

@@ -108,7 +108,7 @@ uint8_t SPI::transaction(std::vector<unsigned char> buffer, uint8_t ans_len) /*N
         PrintLog(Warning_log,(std::string) __func__+  (std::string)": Packet not send\n");
         return NOK;
     }
-    if(CRC8(this->LastRecMsg.data(),this->LastRecMsg.size()))
+    if(CRC::crc8(this->LastRecMsg.data(),this->LastRecMsg.size()))
     {
         this->Mutex=0;
         PrintLog(Warning_log,(std::string) __func__+  (std::string)": CRC error\n");
@@ -143,7 +143,7 @@ int SPI::SendRaw_new(unsigned char *buffer, unsigned int len, uint8_t ans_len) /
             CleanRecMsg();
             this->LastRecMsg.push_back(0x03);
             this->LastRecMsg.push_back(0x33);
-            this->LastRecMsg.push_back(CRC8(test1,2));
+            this->LastRecMsg.push_back(CRC::crc8(test1,2));
             return OK;
         } else
         {
@@ -153,7 +153,7 @@ int SPI::SendRaw_new(unsigned char *buffer, unsigned int len, uint8_t ans_len) /
             this->LastRecMsg.push_back(0x33);
             this->LastRecMsg.push_back(0x00);
             this->LastRecMsg.push_back(0x00);
-            this->LastRecMsg.push_back(CRC8(test,4));
+            this->LastRecMsg.push_back(CRC::crc8(test,4));
             return OK;
         }
     }
@@ -226,17 +226,6 @@ void SPI::PrintToCout(uint8_t status, string msg)
         cout<<status<<msg<<endl;
 }
 
-unsigned char SPI::CRC8(unsigned char *buffer, unsigned int len)
-{
-    unsigned char crc = 0x82;
-    //PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started\n");
-    while (len--)
-    {
-        crc ^= *buffer++;; crc = (crc & 1)? (crc >> 1) ^ 0x8c : crc >> 1;
-    }
-    //PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully\n");
-    return crc;
-}
 int SPI::SendPacket(std::vector<unsigned char> Buffer, uint8_t ans_len)
 {
     //PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started\n");
@@ -251,7 +240,7 @@ int SPI::SendPacket(std::vector<unsigned char> Buffer, uint8_t ans_len)
     {
         Result[i+1]=temp[i];
     }
-    Result[FullLen-1]=CRC8(Result,FullLen-1);
+    Result[FullLen-1]=CRC::crc8(Result,FullLen-1);
     if(SendRaw_new(Result, FullLen, ans_len))
     {
         PrintLog(Info_log,(std::string) __func__+  (std::string)"Transmisison error\n");

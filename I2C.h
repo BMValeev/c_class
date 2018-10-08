@@ -30,6 +30,8 @@ using namespace std;
 #include <algorithm>
 #include <map>
 
+#include "crc.h"
+
 #define MUTEX_BLOCKED 127
 #define INVALID_DATA 0x03
 #define TR_ERR 0x05
@@ -84,7 +86,6 @@ private:
     /*Safe functions*/
     static void PrintToCout(uint8_t status, std::string msg);
     void PrintLog(uint8_t status, std::string text);
-    unsigned char CRC8(unsigned char *buffer, unsigned int len);
     int SendPacket(std::vector<unsigned char> address,std::vector<unsigned char> buffer, unsigned int len);
     CallbackFunction m_cb = I2C::PrintToCout;
 
