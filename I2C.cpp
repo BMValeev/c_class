@@ -8,17 +8,18 @@
 I2C* I2C::theOneTrueInstance;
 
 // Construction and destruction
-I2C::I2C() {
-    PrintLog(Debug_log,(std::string) __func__+  (std::string)"I2C constructor called");
+I2C::I2C(CallbackFunction cb) {
+    this->m_cb=cb;
+    this->PrintLog(Debug_log,(std::string) __func__+  (std::string)"I2C constructor called");
     if (theOneTrueInstance) throw std::logic_error("Instance already exists");
     theOneTrueInstance = this;
 }
 I2C::~I2C() { }
-I2C & I2C::getInstance() {
-    if (!theOneTrueInstance) initInstance();
+I2C & I2C::getInstance(CallbackFunction cb) {
+    if (!theOneTrueInstance) initInstance(cb);
     return *theOneTrueInstance;
 }
-void I2C::initInstance() { new I2C; }
+void I2C::initInstance(CallbackFunction cb) { new I2C(cb); }
 
 
 
@@ -46,7 +47,7 @@ void I2C::SetDeviceName(std::string Name)
 }
 void I2C::PrintLog(uint8_t status, std::string text)
 {
-    if (this->m_cb!=0)
+    if (this->m_cb!=nullptr)
     {
         m_cb(status,text);
     }
@@ -210,7 +211,7 @@ int I2C::SendPacket(std::vector<unsigned char> address,std::vector<unsigned char
     return OK;
 }
 
-unsigned int I2C::begin(std::string device,CallbackFunction cb)
+unsigned int I2C::begin(std::string device)
 {
     this->Mutex=1;
     if (this->init==1)
@@ -219,7 +220,6 @@ unsigned int I2C::begin(std::string device,CallbackFunction cb)
         this->Mutex=0;
         return 1;
     }
-    this->m_cb=cb;
     CleanRecMsg();
     SetDeviceName(device);
     PrintLog(Debug_log,(std::string) __func__ +(std::string)"Initialized");
@@ -250,13 +250,13 @@ unsigned int I2C::transaction(std::vector<unsigned char> address,std::vector<uns
 // Construction and destruction
 ConnModule::ConnModule(std::string filename,CallbackFunction cb)
 {
-    I2C &ptrI2C = I2C::getInstance();
+    I2C &ptrI2C = I2C::getInstance(cb);
     std::vector<unsigned char> address;
     //cout<<"3"<<endl;
     //this->m_cb=0;
-    //this->m_cb=cb;
+    this->m_cb=cb;
     //cout<<"4"<<endl;
-    ptrI2C.begin(filename,cb);
+    ptrI2C.begin(filename);
     //cout<<"5"<<endl;
     address.push_back(0b01110000);
     //cout<<"55"<<endl;
@@ -527,10 +527,10 @@ void ConnModule::PrintToCout(uint8_t status, string msg)
 // Construction and destruction
 BoardModule::BoardModule(std::string filename,CallbackFunction cb)
 {
-    I2C &ptrI2C = I2C::getInstance();
+    I2C &ptrI2C = I2C::getInstance(cb);
     //this->m_cb=0;
-    //this->m_cb=cb;
-    ptrI2C.begin(filename,cb);
+    this->m_cb=cb;
+    ptrI2C.begin(filename);
     std::vector<unsigned char> address;
     address.push_back(0b01001000);
     //printf("%02x\n",address.front());
@@ -665,10 +665,6 @@ void BoardModule::PrintToCout(uint8_t status, string msg)
 }
 
 #ifndef QTAPP
-void PrintToC(uint8_t status, string msg)
-{
-    cout<<status<<msg<<endl;
-}
 int main(void)
 {
     std::string filename="/dev/i2c-2";

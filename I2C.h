@@ -57,14 +57,14 @@ typedef std::function<void(uint8_t, std::string)> CallbackFunction;
 class I2C
 {
 public:
-    static I2C & getInstance();
-    static void initInstance();
-    unsigned int begin(std::string device,CallbackFunction cb);
+    static I2C & getInstance(CallbackFunction cb=PrintToCout);
+    static void initInstance(CallbackFunction cb=PrintToCout);
+    unsigned int begin(std::string device);
     unsigned int transaction(std::vector<unsigned char> address,std::vector<unsigned char> buffer, unsigned int len);
     std::vector<unsigned char> recData(void);
 
 protected:
-    I2C();
+    I2C(CallbackFunction cb=PrintToCout);
     virtual ~I2C();
 
 private:
