@@ -32,6 +32,7 @@ using namespace std;
 #define NACK 0x02
 #define NOK 0x01
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+#define PACKED_LENGTH 32
 
 #define QTAPP // flags that is used by submodules to determine wether they are compiled within application or stand-alone
 

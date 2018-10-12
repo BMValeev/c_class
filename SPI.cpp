@@ -35,7 +35,7 @@ uint8_t SPI::begin(std::string device,CallbackFunction cb)/*Need to check*/
     int statusVal = -1;
     this->mode = SPI_MODE_0 ;
     this->bitsPerWord = 8;
-    this->speed = 100000;
+    this->speed = 1000000;
     this->spifd = -1;
     this->spifd = open(this->DeviceName.c_str(), O_RDWR);
     if(this->spifd < 0){
@@ -133,7 +133,7 @@ int SPI::SendRaw_new(unsigned char *buffer, unsigned int len, uint8_t ans_len) /
 {
     int retVal = 0;
     PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started\n");
-    unsigned char receive[ans_len];
+    unsigned char receive[len];
     unsigned char test[4]={0x05,0x33,0x00,0x00};
     unsigned char test1[2]={0x03,0x33};
     if (this->status==0)
@@ -172,7 +172,8 @@ int SPI::SendRaw_new(unsigned char *buffer, unsigned int len, uint8_t ans_len) /
     send[0].cs_change = 0;
     send[1].tx_buf = (unsigned long)NULL;
     send[1].rx_buf = (unsigned long)receive;
-    send[1].len = ans_len;
+    //send[1].len = ans_len;
+    send[1].len = len;
     send[1].delay_usecs = 0;
     send[1].speed_hz = this->speed;
     send[1].bits_per_word = this->bitsPerWord;
@@ -233,16 +234,21 @@ int SPI::SendPacket(std::vector<unsigned char> Buffer, uint8_t ans_len)
     unsigned int FullLen;
     unsigned int i=0;
     unsigned char *temp;
-    unsigned char Result[Buffer.size()+2];
+    //unsigned char Result[Buffer.size()+2];
+    unsigned char Result[PACKED_LENGTH];
     FullLen=Buffer.size()+2;
     temp=Buffer.data();
     Result[0]=FullLen;
-    for(i=0;i<Buffer.size();i++)
+    for(i=1;i<Buffer.size()+1;i++)
     {
-        Result[i+1]=temp[i];
+        Result[i]=temp[i-1];
     }
-    Result[FullLen-1]=CRC::crc8(Result,FullLen-1);
-    if(SendRaw_new(Result, FullLen, ans_len))
+    Result[i++]=CRC::crc8(Result,FullLen-1);
+    // Fill rest of the buffer with zeros
+    for(; i<PACKED_LENGTH; i++) {
+        Result[i] = 0;
+    }
+    if(SendRaw_new(Result, PACKED_LENGTH, ans_len))
     {
         PrintLog(Info_log,(std::string) __func__+  (std::string)"Transmisison error\n");
         return NOK;
