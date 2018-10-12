@@ -42,7 +42,7 @@ void I2C::SetDeviceName(std::string Name)
          * Used for configuration of the device in construction
          */
     PrintLog(Debug_log,(std::string) __func__+  (std::string)"Device name set to :"
-                       +(std::string)this->DeviceName +(std::string)"\n");
+                       +(std::string)this->DeviceName);
     this->DeviceName=Name;
 }
 void I2C::PrintLog(uint8_t status, std::string text)
