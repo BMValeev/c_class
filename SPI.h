@@ -107,6 +107,10 @@ public:
     uint8_t SetPedalCut(uint8_t  Status);
     uint8_t SetFilter(uint8_t  Filter1,uint8_t  Filter2);
     uint8_t SetDutyCycle(uint8_t DutyCycle1 ,uint8_t DutyCycle2);
+    uint8_t RenewAll(uint8_t connector, uint8_t routineCut, uint8_t routineCoag, uint16_t maxVoltageCut, uint16_t maxVoltageCoag,
+                     uint16_t powerCut, uint16_t powerCoag, uint8_t maxTime, uint8_t autostart, uint8_t autostartDelay, uint8_t autostop,
+                     uint16_t autostopResistance, uint8_t irrigation, uint8_t irrigationDelay, uint16_t cutPWMFrequency, uint16_t coagPWMFrequency,
+                     uint8_t dutyCycleCut, uint8_t dutyCycleCoag, uint8_t filterCut, uint8_t filterCoag, uint8_t cutPedal, uint8_t coagPedal);
 
 private:
     uint8_t WrongTransactions=3;
