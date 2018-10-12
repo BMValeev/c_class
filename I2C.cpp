@@ -82,10 +82,10 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
         //data_send=data_send+(std::string)(buffer.data()[cnt]);
     }
     PrintLog(Debug_log,(std::string) __func__+  (std::string)"Send message"
-                       +data_send +(std::string)"\n");
+                       +data_send);
     i2c_rdwr_ioctl_data message;
     i2c_msg message_packet[2];
-    printf("%02x\n",address.front());
+    //printf("%02x\n",address.front());
     message_packet[0].addr=address.front();
     message_packet[0].flags=0;
     message_packet[0].len=buffer.size();
@@ -197,9 +197,9 @@ int I2C::SendPacket(std::vector<unsigned char> address,std::vector<unsigned char
     for(unsigned int i=0;i<this->LastRecMsg.size();i++)
     {
         crc_rec.push_back(temp_rec[i]);
-        printf("%02x\n",temp_rec[i]);
+        //("%02x\n",temp_rec[i]);
     }
-    printf("%02x\n",CRC::crc8(crc_rec.data(),crc_rec.size()));
+    //("%02x\n",CRC::crc8(crc_rec.data(),crc_rec.size()));
     if(CRC::crc8(crc_rec.data(),crc_rec.size()))
     {
         PrintLog(Warning_log,(std::string) __func__ +(std::string)"CRC error");
@@ -533,7 +533,7 @@ BoardModule::BoardModule(std::string filename,CallbackFunction cb)
     ptrI2C.begin(filename,cb);
     std::vector<unsigned char> address;
     address.push_back(0b01001000);
-    printf("%02x\n",address.front());
+    //printf("%02x\n",address.front());
     this->addr=address;
 }
 BoardModule::~BoardModule()
