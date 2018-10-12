@@ -215,7 +215,7 @@ unsigned int I2C::begin(std::string device,CallbackFunction cb)
     this->Mutex=1;
     if (this->init==1)
     {
-        cout<<"everything initialized";
+        PrintLog(Info_log,"I2C initialized");
         this->Mutex=0;
         return 1;
     }
@@ -253,17 +253,17 @@ ConnModule::ConnModule(std::string filename,CallbackFunction cb)
 {
     I2C &ptrI2C = I2C::getInstance();
     std::vector<unsigned char> address;
-    cout<<"3"<<endl;
+    //cout<<"3"<<endl;
     //this->m_cb=0;
     //this->m_cb=cb;
-    cout<<"4"<<endl;
+    //cout<<"4"<<endl;
     ptrI2C.begin(filename,cb);
-    cout<<"5"<<endl;
+    //cout<<"5"<<endl;
     address.push_back(0b01110000);
-    cout<<"55"<<endl;
+    //cout<<"55"<<endl;
     //setAddress(address);
     this->addr=address;
-    cout<<"6"<<endl;
+    //cout<<"6"<<endl;
 }
 ConnModule::~ConnModule() {
 

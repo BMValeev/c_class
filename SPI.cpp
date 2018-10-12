@@ -108,6 +108,7 @@ uint8_t SPI::transaction(std::vector<unsigned char> buffer, uint8_t ans_len) /*N
         PrintLog(Warning_log,(std::string) __func__+  (std::string)": Packet not send\n");
         return NOK;
     }
+    // Compute CRC over all message including CRC itself - should equal 0
     if(CRC::crc8(this->LastRecMsg.data(),this->LastRecMsg.size()))
     {
         this->Mutex=0;
