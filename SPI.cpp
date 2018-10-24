@@ -161,7 +161,7 @@ int SPI::SendRaw_new(unsigned char *buffer, unsigned int len, uint8_t ans_len) /
     send[0].tx_buf = (unsigned long)buffer;
     send[0].rx_buf = (unsigned long)NULL;
     send[0].len = len;
-    send[0].delay_usecs = 1000;
+    send[0].delay_usecs = 10000;
     send[0].speed_hz = this->speed;
     send[0].bits_per_word = this->bitsPerWord;
     send[0].tx_nbits=0;
