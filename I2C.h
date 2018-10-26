@@ -98,7 +98,7 @@ public:
     void setAddress(std::vector<unsigned char> addr);
     ConnModule(std::string filename,CallbackFunction cb);
     ~ConnModule();
-    uint8_t SetUUID(std::vector<unsigned char> uuid,std::vector<unsigned char> &response);
+    uint8_t SetUUID(uint32_t uuid,std::vector<unsigned char> &response);
     uint8_t SetName(std::vector<unsigned char> data,std::vector<unsigned char> &response);
     uint8_t StartInit(std::vector<unsigned char> &response);
     uint8_t WriteString(std::vector<unsigned char> data,std::vector<unsigned char> &response);

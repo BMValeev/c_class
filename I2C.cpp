@@ -278,10 +278,16 @@ void ConnModule::setAddress(std::vector<unsigned char> addr)
     addr.push_back(temp_addr&0x7f);
     this->addr=(addr);
 }
-uint8_t ConnModule::SetUUID(std::vector<unsigned char> uuid, std::vector<unsigned char> &response)
+uint8_t ConnModule::SetUUID(uint32_t uuid, std::vector<unsigned char> &response)
 {
-
-    response=WriteArray(0x01, uuid, 3);
+    // Construct uuid array of bytes
+    std::vector<uint8_t> uuid_b;
+    uuid_b.push_back(uuid & 0xFF);
+    uuid_b.push_back((uuid>>8)  & 0xFF);
+    uuid_b.push_back((uuid>>16) & 0xFF);
+    uuid_b.push_back((uuid>>24) & 0xFF);
+    // Send
+    response=WriteArray(0x01, uuid_b, 3);
     if (response.size()!=1)
     {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"Set UUID failed");
@@ -492,13 +498,13 @@ std::vector<unsigned char> ConnModule::WriteArray(uint8_t command,std::vector<un
 {
     I2C & ptrI2C=I2C::getInstance();
     unsigned int cnt=this->WrongTransactions;
-    unsigned char *array=data.data();
     unsigned int error;
     std::vector<unsigned char> msg, answer,null;
     msg.push_back(command);
-    for(int i=data.size()-1;i>=0;i--)
+    //for(int i=data.size()-1;i>=0;i--)
+    for(int i=0;i<data.size();i++)
     {
-        msg.push_back(array[i]);
+        msg.push_back(data[i]);
     }
     while(cnt--) {
         error=ptrI2C.transaction(this->addr,msg,len);
