@@ -543,7 +543,7 @@ BoardModule::BoardModule(std::string filename,CallbackFunction cb)
     this->m_cb=cb;
     ptrI2C.begin(filename);
     std::vector<unsigned char> address;
-    address.push_back(0b01001000);
+    address.push_back(0b01000000); // changed to 0x80 (we write 0x40)
     //printf("%02x\n",address.front());
     this->addr=address;
 }
