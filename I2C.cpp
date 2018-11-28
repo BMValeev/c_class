@@ -130,6 +130,7 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
         perror("Error printed by perror");
         fprintf(stderr, "Error opening file: %s\n", strerror( errnum ));
         PrintLog(Warning_log,(std::string) __func__+  (std::string)"Device open error");
+        close(file);
         return NOK;
         //perror("/dev/i2c-2");
     }
@@ -137,6 +138,7 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
     {
         PrintLog(Warning_log,(std::string) __func__+  (std::string)"Failed to acquire bus access and/or talk to slave");
         //perror("Failed to acquire bus access and/or talk to slave");
+        close(file);
         return NOK;
     }
     ret=ioctl(file, I2C_RDWR, &message);
@@ -144,9 +146,10 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
         PrintLog(Warning_log,(std::string) __func__+  (std::string)strerror(-ret)
                              +(std::string)"Unable to send message");
         //fprintf (stderr, "%s.\n", strerror(-ret));
+        close(file);
         return NOK;
     }
-
+    close(file);
     CleanRecMsg();
     for (cnt = 0; cnt < (cnt_all); cnt++)
     {
