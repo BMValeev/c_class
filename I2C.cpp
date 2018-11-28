@@ -62,6 +62,7 @@ void I2C::PrintToCout(uint8_t status, string msg)
 int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned char> buffer, unsigned int rlen)
 {
     int ret;
+    int errnum;
     unsigned int cnt, cnt_all;
     /*unsigned char buf[10]= {0};
     buf[0] = 0b11100000;
@@ -124,6 +125,10 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
     //cout<<"i2copen"<<endl;
     if (file == -1)
     {
+        errnum = errno;
+        fprintf(stderr, "Value of errno: %d\n", errno);
+        perror("Error printed by perror");
+        fprintf(stderr, "Error opening file: %s\n", strerror( errnum ));
         PrintLog(Warning_log,(std::string) __func__+  (std::string)"Device open error");
         return NOK;
         //perror("/dev/i2c-2");
