@@ -126,9 +126,9 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
     if (file == -1)
     {
         errnum = errno;
-        fprintf(stderr, "Value of errno: %d\n", errno);
-        perror("Error printed by perror");
-        fprintf(stderr, "Error opening file: %s\n", strerror( errnum ));
+        //fprintf(stderr, "Value of errno: %d\n", errno);
+        //perror("Error printed by perror");
+        //fprintf(stderr, "Error opening file: %s\n", strerror( errnum ));
         PrintLog(Warning_log,(std::string) __func__+  (std::string)"Device open error");
         close(file);
         return NOK;
