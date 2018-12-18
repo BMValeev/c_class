@@ -155,6 +155,14 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
     {
         this->LastRecMsg.push_back(buf_rec[cnt]);
     }
+    if((this->LastRecMsg.front()==0x00))
+    {
+        return NOK;
+    }
+    if((this->LastRecMsg.front()==0xff))
+    {
+        return NOK;
+    }
     cnt_all=cnt_all-this->LastRecMsg.front();
     while (--cnt_all)
     {
@@ -521,6 +529,10 @@ std::vector<unsigned char> ConnModule::WriteArray(uint8_t command,std::vector<un
             answer.erase(answer.begin());
             return answer;
         }
+    }
+    if (command==0x0C)
+    {
+       return null.push_back(command);
     }
     return null;
 }
