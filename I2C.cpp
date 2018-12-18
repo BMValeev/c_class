@@ -530,6 +530,10 @@ std::vector<unsigned char> ConnModule::WriteArray(uint8_t command,std::vector<un
             return answer;
         }
     }
+    if (command==0x0C)
+    {
+       return null.push_back(command);
+    }
     return null;
 }
 void ConnModule::PrintLog(uint8_t status, std::string text)
