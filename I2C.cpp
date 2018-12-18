@@ -155,6 +155,10 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
     {
         this->LastRecMsg.push_back(buf_rec[cnt]);
     }
+    if((this->LastRecMsg.front()==0x00)|(this->LastRecMsg.front()==0xff))
+    {
+        return NOK;
+    }
     cnt_all=cnt_all-this->LastRecMsg.front();
     while (--cnt_all)
     {
