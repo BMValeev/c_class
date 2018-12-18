@@ -532,7 +532,8 @@ std::vector<unsigned char> ConnModule::WriteArray(uint8_t command,std::vector<un
     }
     if (command==0x0C)
     {
-       return null.push_back(command);
+       null.push_back('c');
+       return null;
     }
     return null;
 }
