@@ -19,10 +19,8 @@
 
 class ScreenLight : private PWM
 {
-public:
-    ScreenLight();
-
 private:
+    ScreenLight();
     uint8_t m_power = DEFAULT_SCREEN_LIGHT_POWER;
 
     bool lset_power(uint8_t power); // установить мощность, в процентах, от 0 до 100
