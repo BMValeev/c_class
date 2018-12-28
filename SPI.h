@@ -3,7 +3,7 @@
 */
 #ifndef C_CLASS_SPI_H
 #define C_CLASS_SPI_H
-
+/*
 using namespace std;
 #include <unistd.h>
 #include <stdint.h>
@@ -19,22 +19,27 @@ using namespace std;
 #include <functional>
 #include <vector>
 #include <algorithm>
+#include "crc.h"*/
 
-#include "crc.h"
+#include <string>
+#include <cstring>
+#include <iostream>
+#include <functional>
+#include <vector>
+#include <algorithm>
+#include <mutex>
 
-#define MUTEX_BLOCKED 127
-#define INVALID_DATA 0x03
-#define ACK 0x30
-#define EXEC 0x03
-#define TR_ERR 0x05
-#define TEST 0x03
-#define OK 0x00
+
+#define ACK_SPI 0x30
+#define EXEC_SPI 0x03
+#define TR_ERR_SPI 0x05
+#define OK_SPI 0x00
 #define NACK 0x02
-#define NOK 0x01
+#define NOK_SPI 0x01
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
-#define PACKED_LENGTH 32
+#define PACKED_LENGTH_SPI 32
 
-#define QTAPP // flags that is used by submodules to determine wether they are compiled within application or stand-alone
+/*#define QTAPP */ // flags that is used by submodules to determine wether they are compiled within application or stand-alone
 
 enum Log_status { Info_log = 1, Debug_log=2, Warning_log= 3,Critical_log=4 };
 // Low level class that implements basic information exchange via SPI on Hamming board
@@ -55,7 +60,7 @@ protected:
 private:
     static SPI* theOneTrueInstance;
     std::vector<unsigned char> LastRecMsg;
-    uint8_t Mutex;
+    std::mutex Mutex;
     uint8_t status=0;
     uint8_t NewData;
     int spifd;
@@ -72,16 +77,6 @@ private:
     int SendPacket(std::vector<unsigned char> Buffer, uint8_t ans_len);
     CallbackFunction m_cb = SPI::PrintToCout;
 };
-
-
-
-
-
-
-
-
-
-
 
 
 class MCU

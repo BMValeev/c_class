@@ -1,7 +1,19 @@
 /*
  *Created by eleps on 27.04.18.
  */
-
+using namespace std;
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <cstdint>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <linux/i2c-dev.h>
+#include <sys/stat.h>
+#include <linux/i2c.h>
+#include "crc.h"
 #include "I2C.h"
 
 // I2C class
@@ -25,7 +37,7 @@ void I2C::initInstance(CallbackFunction cb) { new I2C(cb); }
 
 std::vector<unsigned char> I2C::recData(void)
 {
-    this->NewData=0;
+
     return LastRecMsg;
 }
 void I2C::CleanRecMsg(void)
@@ -34,7 +46,6 @@ void I2C::CleanRecMsg(void)
          * Explicitly cleans last read buffer
          */
     this->LastRecMsg.clear();
-    this->NewData=0;
 }
 void I2C::SetDeviceName(std::string Name)
 {
@@ -62,7 +73,7 @@ void I2C::PrintToCout(uint8_t status, string msg)
 int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned char> buffer, unsigned int rlen)
 {
     int ret;
-    int errnum;
+    //int errnum;
     unsigned int cnt, cnt_all;
     /*unsigned char buf[10]= {0};
     buf[0] = 0b11100000;
@@ -79,7 +90,7 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
             ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
     std::string data_send,data_rec;
     //data_send=data_send+(std::string)(address.front());
-    for (int cnt=0;cnt<buffer.size();cnt++)
+    for (unsigned int cnt=0;cnt<buffer.size();cnt++)
     {
         //data_send=data_send+(std::string)(buffer.data()[cnt]);
     }
@@ -125,13 +136,13 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
     //cout<<"i2copen"<<endl;
     if (file == -1)
     {
-        errnum = errno;
+        //errnum = errno;
         //fprintf(stderr, "Value of errno: %d\n", errno);
         //perror("Error printed by perror");
         //fprintf(stderr, "Error opening file: %s\n", strerror( errnum ));
         PrintLog(Warning_log,(std::string) __func__+  (std::string)"Device open error");
         close(file);
-        return NOK;
+        return NOK_I2C;
         //perror("/dev/i2c-2");
     }
     if (ioctl(file, I2C_SLAVE, address.front()) < 0)
@@ -139,7 +150,7 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
         PrintLog(Warning_log,(std::string) __func__+  (std::string)"Failed to acquire bus access and/or talk to slave");
         //perror("Failed to acquire bus access and/or talk to slave");
         close(file);
-        return NOK;
+        return NOK_I2C;
     }
     ret=ioctl(file, I2C_RDWR, &message);
     if (ret<0) {
@@ -147,7 +158,7 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
                              +(std::string)"Unable to send message");
         //fprintf (stderr, "%s.\n", strerror(-ret));
         close(file);
-        return NOK;
+        return NOK_I2C;
     }
     close(file);
     CleanRecMsg();
@@ -157,11 +168,11 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
     }
     if((this->LastRecMsg.front()==0x00))
     {
-        return NOK;
+        return NOK_I2C;
     }
     if((this->LastRecMsg.front()==0xff))
     {
-        return NOK;
+        return NOK_I2C;
     }
     cnt_all=cnt_all-this->LastRecMsg.front();
     while (--cnt_all)
@@ -174,7 +185,7 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
     }
     PrintLog(Debug_log,(std::string) __func__+  (std::string)"Send message"
                        +data_rec);
-    return OK;
+    return OK_I2C;
 }
 
 int I2C::SendRaw(std::vector<unsigned char> address,std::vector<unsigned char>, unsigned int len)
@@ -207,7 +218,7 @@ int I2C::SendPacket(std::vector<unsigned char> address,std::vector<unsigned char
     CleanRecMsg();
     if(SendRaw_new(address, package,len))
     {
-        return NOK;
+        return NOK_I2C;
     }
     temp_rec=this->LastRecMsg.data();
     crc_rec.push_back(temp_addr[0]<<1);
@@ -220,45 +231,38 @@ int I2C::SendPacket(std::vector<unsigned char> address,std::vector<unsigned char
     if(CRC::crc8(crc_rec.data(),crc_rec.size()))
     {
         PrintLog(Warning_log,(std::string) __func__ +(std::string)"CRC error");
-        return NOK;
+        return NOK_I2C;
     }
     this->LastRecMsg.pop_back();
-    this->NewData=1;
-    return OK;
+    return OK_I2C;
 }
 
 unsigned int I2C::begin(std::string device)
 {
-    this->Mutex=1;
+    this->Mutex.lock();
     if (this->init==1)
     {
         PrintLog(Info_log,"I2C initialized");
-        this->Mutex=0;
+        this->Mutex.unlock();
         return 1;
     }
     CleanRecMsg();
     SetDeviceName(device);
     PrintLog(Debug_log,(std::string) __func__ +(std::string)"Initialized");
-    this->Mutex=0;
+    this->Mutex.unlock();
+    this->init=1;
+    return 0;
 }
 unsigned int I2C::transaction(std::vector<unsigned char> address,std::vector<unsigned char> buffer, unsigned int len)
 {
-    if(this->Mutex)
-    {
-        return NOK;
-    }
-    if(this->NewData)
-    {
-        return NOK;
-    }
-    this->Mutex=1;
+    this->Mutex.lock();
     if (SendPacket(address,buffer,len))
     {
-        this->Mutex=0;
-        return NOK;
+        this->Mutex.unlock();
+        return NOK_I2C;
     }
-    this->Mutex=0;
-    return OK;
+    this->Mutex.unlock();
+    return OK_I2C;
 }
 
 
@@ -307,15 +311,15 @@ uint8_t ConnModule::SetUUID(uint32_t uuid, std::vector<unsigned char> &response)
     if (response.size()!=1)
     {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"Set UUID failed");
-        return NOK;
+        return NOK_I2C;
     }
     if (response.front()==ACK_I2C)
     {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"Set UUID succesfuly");
-        return OK;
+        return OK_I2C;
     }
     PrintLog(Debug_log,(std::string) __func__ +(std::string)"Set UUID failed, NACK");
-    return NOK;
+    return NOK_I2C;
 }
 uint8_t ConnModule::SetName(std::vector<unsigned char> data, std::vector<unsigned char> &response)
 {
@@ -323,15 +327,15 @@ uint8_t ConnModule::SetName(std::vector<unsigned char> data, std::vector<unsigne
     if (response.size()!=1)
     {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"Set SetName failed");
-        return NOK;
+        return NOK_I2C;
     }
     if (response.front()==ACK_I2C)
     {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"Set SetName succesfuly");
-        return OK;
+        return OK_I2C;
     }
     PrintLog(Debug_log,(std::string) __func__ +(std::string)"Set SetName failed, NACK");
-    return NOK;
+    return NOK_I2C;
 }
 uint8_t ConnModule::StartInit(std::vector<unsigned char> &response)
 {
@@ -340,15 +344,15 @@ uint8_t ConnModule::StartInit(std::vector<unsigned char> &response)
     if (response.size()!=1)
     {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"StartInit failed");
-        return NOK;
+        return NOK_I2C;
     }
     if (response.front()==ACK_I2C)
     {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"StartInit succesfuly");
-        return OK;
+        return OK_I2C;
     }
     PrintLog(Debug_log,(std::string) __func__ +(std::string)"StartInit failed, NACK");
-        return NOK;
+        return NOK_I2C;
 }
 uint8_t ConnModule::WriteString(std::vector<unsigned char> data, std::vector<unsigned char> &response)
 {
@@ -356,15 +360,15 @@ uint8_t ConnModule::WriteString(std::vector<unsigned char> data, std::vector<uns
     if (response.size()!=1)
     {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"WriteString failed");
-        return NOK;
+        return NOK_I2C;
     }
     if (response.front()==ACK_I2C)
     {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"WriteString succesfuly");
-        return OK;
+        return OK_I2C;
     }
     PrintLog(Debug_log,(std::string) __func__ +(std::string)"WriteString failed, NACK");
-    return NOK;
+    return NOK_I2C;
 }
 uint8_t ConnModule::EndInit(std::vector<unsigned char> &response)
 {
@@ -373,15 +377,15 @@ uint8_t ConnModule::EndInit(std::vector<unsigned char> &response)
     if (response.size()!=1)
     {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"EndInit failed");
-        return NOK;
+        return NOK_I2C;
     }
     if (response.front()==ACK_I2C)
     {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"EndInit succesfuly");
-        return OK;
+        return OK_I2C;
     }
     PrintLog(Debug_log,(std::string) __func__ +(std::string)"EndInit failed, NACK");
-    return NOK;
+    return NOK_I2C;
 }
 uint8_t ConnModule::CheckBonding(std::vector<unsigned char> &response)
 {
@@ -390,10 +394,10 @@ uint8_t ConnModule::CheckBonding(std::vector<unsigned char> &response)
     if (response.size()!=1)
     {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"CheckBonding failed");
-        return NOK;
+        return NOK_I2C;
     }
     PrintLog(Debug_log,(std::string) __func__ +(std::string)"CheckBonding failed succesfuly");
-    return OK;
+    return OK_I2C;
 }
 
 uint8_t ConnModule::WriteValue(std::vector<unsigned char> id, std::vector<unsigned char> value, std::vector<unsigned char> &response)
@@ -405,15 +409,15 @@ uint8_t ConnModule::WriteValue(std::vector<unsigned char> id, std::vector<unsign
     if (response.size()!=1)
     {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"WriteValue failed, wrong responce");
-        return NOK;
+        return NOK_I2C;
     }
     if (response.front()==ACK_I2C)
     {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"WriteValue succesfuly");
-        return OK;
+        return OK_I2C;
     }
     PrintLog(Debug_log,(std::string) __func__ +(std::string)"WriteValue failed, NACK");
-    return NOK;
+    return NOK_I2C;
 }
 uint8_t ConnModule::StartBonding(std::vector<unsigned char> db, std::vector<unsigned char> &response)
 {
@@ -421,40 +425,40 @@ uint8_t ConnModule::StartBonding(std::vector<unsigned char> db, std::vector<unsi
     if (response.size()!=1)
     {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"StartBonding failed");
-        return NOK;
+        return NOK_I2C;
     }
     if (response.front()==ACK_I2C)
     {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"StartBonding succesfuly");
-        return OK;
+        return OK_I2C;
     }
     PrintLog(Debug_log,(std::string) __func__ +(std::string)"StartBonding failed");
-    return NOK;
+    return NOK_I2C;
 }
 uint8_t ConnModule::ReadValue(uint16_t id_rec, std::map <uint16_t,std::vector<unsigned char> > answer) /*change order of message*/
 {
     std::vector<unsigned char> responce;
     std::vector<unsigned char> data,val;
-    uint16_t id=0x0000;
-    uint32_t value=0x00000000;
+    //uint16_t id=0x0000;
+    //uint32_t value=0x00000000;
     data.push_back(id_rec&0xff);
     data.push_back((id_rec>>8)&0xff);
     responce=WriteArray(0x07, data, 8);
     if (responce.size()==0)
     {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"ReadValue failed");
-        return NOK;
+        return NOK_I2C;
     }
     if (responce.size()%4)
     {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"ReadValue failed");
-        return NOK;
+        return NOK_I2C;
     }
     /*id=responce.front()<<8;
     responce.erase(responce.begin());
     id|=responce.front();
     responce.erase(responce.begin());*/
-    id=id_rec;
+    //id=id_rec;
     val.push_back(responce.front());
     responce.erase(responce.begin());
     val.push_back(responce.front());
@@ -465,7 +469,7 @@ uint8_t ConnModule::ReadValue(uint16_t id_rec, std::map <uint16_t,std::vector<un
     responce.erase(responce.begin());
     answer.insert (pair<uint16_t,std::vector<unsigned char>>(id_rec,val));
     PrintLog(Debug_log,(std::string) __func__ +(std::string)"ReadValue succesfuly");
-    return OK;
+    return OK_I2C;
 
 }
 uint8_t ConnModule::ReadLastChangedValue(std::map <uint16_t,std::vector<unsigned char>> answer) /*change order of message*/
@@ -473,21 +477,21 @@ uint8_t ConnModule::ReadLastChangedValue(std::map <uint16_t,std::vector<unsigned
     std::vector<unsigned char> response;
     std::vector<unsigned char> data, val;
     uint16_t id;
-    uint32_t value;
+    //uint32_t value;
     response=WriteArray(0x0C, data, 10);
     if (response.size()==0)
     {
-        return OK;
+        return OK_I2C;
     }
     if (response.size()%6)
     {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"ReadLastChangedValue failed");
-        return NOK;
+        return NOK_I2C;
     }
     while(response.size()!=0)
     {
         id=0x0000;
-        value=0x00000000;
+        //value=0x00000000;
         val.clear();
         id=response.front()<<8;
         response.erase(response.begin());
@@ -504,7 +508,7 @@ uint8_t ConnModule::ReadLastChangedValue(std::map <uint16_t,std::vector<unsigned
         answer.insert ( pair<uint16_t,std::vector<unsigned char>>(id,val) );
     }
     PrintLog(Debug_log,(std::string) __func__ +(std::string)"ReadLastChangedValue succesfuly");
-    return OK;
+    return OK_I2C;
 }
 
 
@@ -518,7 +522,7 @@ std::vector<unsigned char> ConnModule::WriteArray(uint8_t command,std::vector<un
     std::vector<unsigned char> msg, answer,null;
     msg.push_back(command);
     //for(int i=data.size()-1;i>=0;i--)
-    for(int i=0;i<data.size();i++)
+    for(unsigned int i=0;i<data.size();i++)
     {
         msg.push_back(data[i]);
     }
@@ -579,10 +583,10 @@ uint8_t BoardModule::SetBonding(unsigned char enable,std::vector<unsigned char> 
     response = WriteArray(0x06, msg, 4);
     if (response.size() != 2) {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"GetVersion failed");
-        return NOK;
+        return NOK_I2C;
     }
     PrintLog(Debug_log,(std::string) __func__ +(std::string)"GetVersion succesfuly");
-    return OK;
+    return OK_I2C;
 }
 void BoardModule::setAddress(std::vector<unsigned char> addr)
 {
@@ -597,10 +601,10 @@ uint8_t BoardModule::GetVersion(std::vector<unsigned char> &response)
     response = WriteArray(0x01, msg, 4);
     if (response.size() != 2) {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"GetVersion failed");
-        return NOK;
+        return NOK_I2C;
     }
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"GetVersion succesfuly");
-        return OK;
+        return OK_I2C;
 }
 uint8_t BoardModule::GetTools(std::vector<unsigned char> &response)
 {
@@ -608,10 +612,10 @@ uint8_t BoardModule::GetTools(std::vector<unsigned char> &response)
     response = WriteArray(0x02, msg, 4);
     if (response.size() != 2) {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"GetTools failed");
-        return NOK;
+        return NOK_I2C;
     }
     PrintLog(Debug_log,(std::string) __func__ +(std::string)"GetTools succesfuly");
-    return OK;
+    return OK_I2C;
 }
 uint8_t BoardModule::GetPower(std::vector<unsigned char> &responce)
 {
@@ -619,10 +623,10 @@ uint8_t BoardModule::GetPower(std::vector<unsigned char> &responce)
     responce = WriteArray(0x03, msg, 3);
     if (responce.size() != 1) {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"GetPower failed");
-        return NOK;
+        return NOK_I2C;
     }
     PrintLog(Debug_log,(std::string) __func__ +(std::string)"GetPower succesfuly");
-    return OK;
+    return OK_I2C;
 }
 uint8_t BoardModule::SetEnergy(unsigned char energy,std::vector<unsigned char> &responce)
 {
@@ -631,14 +635,14 @@ uint8_t BoardModule::SetEnergy(unsigned char energy,std::vector<unsigned char> &
     responce = WriteArray(0x04, msg, 3);
     if (responce.size() != 1) {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"SetEnergy failed");
-        return NOK;
+        return NOK_I2C;
     }
     if (responce.front() == ACK_I2C) {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"SetEnergy succesfuly");
-        return OK;
+        return OK_I2C;
     }
     PrintLog(Debug_log,(std::string) __func__ +(std::string)"SetEnergy failed");
-    return NOK;
+    return NOK_I2C;
 }
 uint8_t BoardModule::SetVolume(unsigned char volume,std::vector<unsigned char> &responce)
 {
@@ -647,14 +651,14 @@ uint8_t BoardModule::SetVolume(unsigned char volume,std::vector<unsigned char> &
     responce = WriteArray(0x05, msg, 3);
     if (responce.size() != 1) {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"SetVolume failed");
-        return NOK;
+        return NOK_I2C;
     }
     if (responce.front() == ACK_I2C) {
         PrintLog(Debug_log,(std::string) __func__ +(std::string)"ReadLastChangedValue succesfuly");
-        return OK;
+        return OK_I2C;
     }
     PrintLog(Debug_log,(std::string) __func__ +(std::string)"SetVolume failed");
-    return NOK;
+    return NOK_I2C;
 }
 std::vector<unsigned char> BoardModule::WriteArray(uint8_t command,std::vector<unsigned char> data,unsigned int len)
 {
@@ -692,6 +696,10 @@ void BoardModule::PrintToCout(uint8_t status, string msg)
 }
 
 #ifndef QTAPP
+void PrintToC(uint8_t status, string msg)
+{
+    cout<<status<<msg<<endl;
+}
 int main(void)
 {
     std::string filename="/dev/i2c-2";
@@ -704,4 +712,4 @@ int main(void)
     printf("%zu\n",data.size());
     return 1;
 }
-#endif // QTAPP
+#endif

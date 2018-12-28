@@ -4,23 +4,7 @@
 #ifndef C_CLASS_I2C_H
 #define C_CLASS_I2C_H
 
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/ioctl.h>
-#include <fcntl.h>
 
-using namespace std;
-#include <unistd.h>
-#include <cstdint>
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <cstdio>
-#include <cerrno>
-#include <cstdlib>
-#include <iostream>
-#include <linux/i2c-dev.h>
-#include <sys/stat.h>
-#include <linux/i2c.h>
 #include <vector>
 #include <string>
 #include <cstring>
@@ -29,28 +13,29 @@ using namespace std;
 #include <vector>
 #include <algorithm>
 #include <map>
+#include <mutex>
+#include <cstdio>
+#include <cerrno>
+#include <cstdlib>
+#include <iostream>
 
-#include "crc.h"
 
-#define MUTEX_BLOCKED 127
-#define INVALID_DATA 0x03
-#define TR_ERR 0x05
+#define TR_ERR_SPI 0x05
 #define ACK_I2C 0x06
 #define NACK_I2C 0x015
-#define BOF 0x20
-#define MSP 0x21
+#define BOF_I2C 0x20
+#define MSP_I2C 0x21
 
-#define OK 0x00
-#define NOK 0x01
+#define OK_I2C 0x00
+#define NOK_I2C 0x01
 
-#define QTAPP // flags that is used by submodules to determine wether they are compiled within application or stand-alone
+/*#define QTAPP*/ // flags that is used by submodules to determine wether they are compiled within application or stand-alone
 
 #ifndef QTAPP
 // Stand-alone compile
 enum Log_status { Info_log = 1, Debug_log=2, Warning_log= 3,Critical_log=4 };
 #else
 // Within QT app compile
-#include "SPI.h"
 #endif // QTAPP
 
 typedef std::function<void(uint8_t, std::string)> CallbackFunction;
@@ -72,9 +57,7 @@ private:
     const unsigned int MaxLen=40;
     unsigned int MsgLen;
     std::vector<unsigned char>  LastRecMsg;
-    int Mutex;
-    int NewData;
-    int i2cfd;
+    std::mutex Mutex;
     int init=0;
     std::string DeviceName;
     struct i2c_client *i2c_data;
