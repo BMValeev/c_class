@@ -3,18 +3,24 @@
 
 #include <stdint.h>
 
-#define DEFAULT_PWM_PIN 0
-#define DEFAULT_PWM_PERIOD_MS 10
-#define DEFAULT_PWM_DUTY_CYCLE_MS 0
+#ifndef DEFAULT_PWM_PIN
+    #define DEFAULT_PWM_PIN 0
+#endif
+
+#ifndef DEFAULT_PWM_PERIOD_MS
+    #define DEFAULT_PWM_PERIOD_MS 10
+#endif
+
+#ifndef DEFAULT_PWM_DUTY_CYCLE_MS
+    #define DEFAULT_PWM_DUTY_CYCLE_MS 0
+#endif
 
 class PWMInterface
 {
 public:
     virtual ~PWMInterface();
 
-    // Возможность поменять параметры. Если ШИМ запущен, можно выдавать
-    // false и ничего не менять, типа поменять настройки можно только когда
-    // ШИМ не работает
+    // Возможность поменять параметры
     virtual bool set_params(uint32_t duty_cycle_ms, uint32_t period_ms = DEFAULT_PWM_PERIOD_MS) = 0;
     // Запуск ШИМ, сигнал пошел с заданными параметрами
     virtual bool start() const = 0;

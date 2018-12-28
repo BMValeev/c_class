@@ -12,7 +12,9 @@ PWM::PWM(uint16_t pin, uint32_t duty_cycle_ms, uint32_t period_ms)
 
 PWM::~PWM()
 {
-    // Чистка, остановка и тд
+    // Если запущен, останавливаем
+    if (is_on())
+        stop();
 }
 
 bool PWM::set_params(uint32_t duty_cycle_ms, uint32_t period_ms)
