@@ -2,15 +2,16 @@
 
 ScreenLight::ScreenLight()
     : PWM(SCREEN_LIGHT_PIN,
-          DEFAULT_SCREEN_LIGHT_POWER*DEFAULT_SCREEN_LIGHT_PWM_PERIOD_MS/100,
-          DEFAULT_SCREEN_LIGHT_PWM_PERIOD_MS)
+          DEFAULT_SCREEN_LIGHT_POWER*DEFAULT_SCREEN_LIGHT_PWM_PERIOD_NS/100,
+          DEFAULT_SCREEN_LIGHT_PWM_PERIOD_NS)
 {    
     start(); // Запускаем подсветку через ШИМ
 }
 
 bool ScreenLight::set_power(uint8_t power)
 {
-    return sl.lset_power(power);
+    return lset_power(power);
+    //return sl.lset_power(power);
 }
 
 bool ScreenLight::lset_power(uint8_t power)
@@ -21,15 +22,40 @@ bool ScreenLight::lset_power(uint8_t power)
     if (m_power == power)
         return false;
 
-    if (!set_params(power*DEFAULT_SCREEN_LIGHT_PWM_PERIOD_MS/100,
-                    DEFAULT_SCREEN_LIGHT_PWM_PERIOD_MS))
+    if (!set_params(power*DEFAULT_SCREEN_LIGHT_PWM_PERIOD_NS/100,
+                    DEFAULT_SCREEN_LIGHT_PWM_PERIOD_NS))
         return false;
 
     m_power = power;
     return true;
 }
 
-uint8_t ScreenLight::power()
+uint8_t ScreenLight::power_val()
 {
-    return sl.m_power;
+    return m_power;
+    //return sl.m_power;
 }
+
+
+#ifdef C_CLASS_DEBUG
+#include <unistd.h>
+#include <iostream>
+using namespace std;
+int main(void)
+{
+try{
+    ScreenLight light;
+    cout <<'1';
+    light.lset_power(100);
+    cout <<'2';
+    usleep(5*1000*1000);
+    cout <<'3';
+    light.lset_power(0);
+    usleep(5*1000*1000);
+    cout <<'4';
+} catch (const char* msg) {
+     cerr << msg << endl;
+   }
+    return 1;
+}
+#endif

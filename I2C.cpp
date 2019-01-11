@@ -695,7 +695,7 @@ void BoardModule::PrintToCout(uint8_t status, string msg)
     cout<<status<<msg<<endl;
 }
 
-#ifndef QTAPP
+#ifdef C_CLASS_DEBUG
 void PrintToC(uint8_t status, string msg)
 {
     cout<<status<<msg<<endl;
