@@ -19,6 +19,7 @@
 #include <cstdlib>
 #include <iostream>
 
+#include "defs.h"
 
 #define TR_ERR_SPI 0x05
 #define ACK_I2C 0x06
@@ -29,14 +30,6 @@
 #define OK_I2C 0x00
 #define NOK_I2C 0x01
 
-/*#define QTAPP*/ // flags that is used by submodules to determine wether they are compiled within application or stand-alone
-
-#ifndef QTAPP
-// Stand-alone compile
-enum Log_status { Info_log = 1, Debug_log=2, Warning_log= 3,Critical_log=4 };
-#else
-// Within QT app compile
-#endif // QTAPP
 
 typedef std::function<void(uint8_t, std::string)> CallbackFunction;
 class I2C

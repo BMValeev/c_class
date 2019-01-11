@@ -29,6 +29,7 @@ using namespace std;
 #include <algorithm>
 #include <mutex>
 
+#include "defs.h"
 
 #define ACK_SPI 0x30
 #define EXEC_SPI 0x03
@@ -39,9 +40,7 @@ using namespace std;
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #define PACKED_LENGTH_SPI 32
 
-/*#define QTAPP */ // flags that is used by submodules to determine wether they are compiled within application or stand-alone
 
-enum Log_status { Info_log = 1, Debug_log=2, Warning_log= 3,Critical_log=4 };
 // Low level class that implements basic information exchange via SPI on Hamming board
 typedef std::function<void(uint8_t, std::string)> CallbackFunction;
 class SPI
