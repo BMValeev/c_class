@@ -645,7 +645,7 @@ uint8_t MCU::SendDoubleInt(uint8_t command,uint16_t value1,uint16_t value2)
     return TR_ERR_SPI;
 }
 
-#ifndef QTAPP
+#ifdef C_CLASS_DEBUG
 // Stand-alone compile
 void PrintToC(uint8_t status, string msg)
 {
