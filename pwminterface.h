@@ -18,7 +18,7 @@
 class PWMInterface
 {
 public:
-    //virtual ~PWMInterface();
+    virtual ~PWMInterface() = 0;
 
     // Возможность поменять параметры
     virtual bool set_params(uint32_t duty_cycle_ns, uint32_t period_ns = DEFAULT_PWM_PERIOD_NS) = 0;
@@ -36,7 +36,5 @@ public:
     virtual uint32_t duty_cycle_ns() const = 0;
 
 };
-
-//PWMInterface::~PWMInterface(){}
 
 #endif // PWMINTERFACE_H
