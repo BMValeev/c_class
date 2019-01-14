@@ -10,12 +10,6 @@ ScreenLight::ScreenLight()
 
 bool ScreenLight::set_power(uint8_t power)
 {
-    return lset_power(power);
-    //return sl.lset_power(power);
-}
-
-bool ScreenLight::lset_power(uint8_t power)
-{
     if (power > 100)
         return false;
 
@@ -33,9 +27,7 @@ bool ScreenLight::lset_power(uint8_t power)
 uint8_t ScreenLight::power_val()
 {
     return m_power;
-    //return sl.m_power;
 }
-
 
 #ifdef C_CLASS_DEBUG
 #include <unistd.h>
@@ -46,11 +38,11 @@ int main(void)
 try{
     ScreenLight light;
     cout <<'1';
-    light.lset_power(100);
+    light.set_power(100);
     cout <<'2';
     usleep(5*1000*1000);
     cout <<'3';
-    light.lset_power(0);
+    light.set_power(0);
     usleep(5*1000*1000);
     cout <<'4';
 } catch (const char* msg) {
