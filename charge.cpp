@@ -1,9 +1,6 @@
 #include "charge.h"
 
-Charge::Charge()
-{
-
-}
+Charge::Charge(){}
 
 uint8_t Charge::read_charge()
 {
