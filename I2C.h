@@ -9,7 +9,6 @@
 #include <string>
 #include <cstring>
 #include <iostream>
-#include <functional>
 #include <vector>
 #include <algorithm>
 #include <map>
@@ -30,19 +29,17 @@
 #define OK_I2C 0x00
 #define NOK_I2C 0x01
 
-
-typedef std::function<void(uint8_t, std::string)> CallbackFunction;
 class I2C
 {
 public:
-    static I2C & getInstance(CallbackFunction cb=PrintToCout);
-    static void initInstance(CallbackFunction cb=PrintToCout);
+    static I2C & getInstance(LogCallback cb=PrintToCout);
+    static void initInstance(LogCallback cb=PrintToCout);
     unsigned int begin(std::string device);
     unsigned int transaction(std::vector<unsigned char> address,std::vector<unsigned char> buffer, unsigned int len);
     std::vector<unsigned char> recData(void);
 
 protected:
-    I2C(CallbackFunction cb=PrintToCout);
+    I2C(LogCallback cb=PrintToCout);
     virtual ~I2C();
 
 private:
@@ -63,7 +60,7 @@ private:
     static void PrintToCout(uint8_t status, std::string msg);
     void PrintLog(uint8_t status, std::string text);
     int SendPacket(std::vector<unsigned char> address,std::vector<unsigned char> buffer, unsigned int len);
-    CallbackFunction m_cb = I2C::PrintToCout;
+    LogCallback m_cb = I2C::PrintToCout;
 
 };
 
@@ -72,7 +69,7 @@ class ConnModule
 public:
     std::vector<unsigned char>getAddress();
     void setAddress(std::vector<unsigned char> addr);
-    ConnModule(std::string filename,CallbackFunction cb);
+    ConnModule(std::string filename,LogCallback cb);
     ~ConnModule();
     uint8_t SetUUID(uint32_t uuid,std::vector<unsigned char> &response);
     uint8_t SetName(std::vector<unsigned char> data,std::vector<unsigned char> &response);
@@ -91,7 +88,7 @@ private:
     std::vector<unsigned char> WriteArray(uint8_t command,std::vector<unsigned char> data,unsigned int len);
     void PrintLog(uint8_t status, std::string text);
     static void PrintToCout(uint8_t status, std::string msg);
-    CallbackFunction m_cb = ConnModule::PrintToCout;
+    LogCallback m_cb = ConnModule::PrintToCout;
 };
 
 class BoardModule
@@ -99,7 +96,7 @@ class BoardModule
 public:
     std::vector<unsigned char>getAddress();
     void setAddress(std::vector<unsigned char> addr);
-    BoardModule(std::string filename,CallbackFunction cb) ;
+    BoardModule(std::string filename,LogCallback cb) ;
     ~BoardModule();
     uint8_t GetVersion(std::vector<unsigned char> &response);
     uint8_t SetBonding(unsigned char enable,std::vector<unsigned char> &response);
@@ -115,7 +112,7 @@ private:
     std::vector<unsigned char> WriteArray(uint8_t command,std::vector<unsigned char> data,unsigned int len);
     void PrintLog(uint8_t status, std::string text);
     static void PrintToCout(uint8_t status, std::string msg);
-    CallbackFunction m_cb = BoardModule::PrintToCout;
+    LogCallback m_cb = BoardModule::PrintToCout;
 };
 
 #endif //C_CLASS_I2C_H

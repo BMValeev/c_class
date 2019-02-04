@@ -34,7 +34,7 @@ SPI::~SPI() {
 
 }
 
-uint8_t SPI::begin(std::string device,CallbackFunction cb)/*Need to check*/
+uint8_t SPI::begin(std::string device,LogCallback cb)/*Need to check*/
 {
     this->m_cb=cb;
     PrintLog(Debug_log,(std::string) __func__+  (std::string)" Function started");
@@ -264,7 +264,7 @@ int SPI::SendPacket(std::vector<unsigned char> Buffer, uint8_t ans_len)
 
 // MCU class
 // Construction and destruction
-MCU::MCU(std::string filename,CallbackFunction cb)
+MCU::MCU(std::string filename,LogCallback cb)
 {
     this->m_cb=cb;
     SPI & ptrSPI=SPI::getInstance();

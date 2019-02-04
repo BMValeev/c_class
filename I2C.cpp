@@ -20,26 +20,25 @@ using namespace std;
 I2C* I2C::theOneTrueInstance;
 
 // Construction and destruction
-I2C::I2C(CallbackFunction cb) {
+I2C::I2C(LogCallback cb) {
     this->m_cb=cb;
     this->PrintLog(Debug_log,(std::string) __func__+  (std::string)"I2C constructor called");
     if (theOneTrueInstance) throw std::logic_error("Instance already exists");
     theOneTrueInstance = this;
 }
 I2C::~I2C() { }
-I2C & I2C::getInstance(CallbackFunction cb) {
+I2C& I2C::getInstance(LogCallback cb) {
     if (!theOneTrueInstance) initInstance(cb);
     return *theOneTrueInstance;
 }
-void I2C::initInstance(CallbackFunction cb) { new I2C(cb); }
 
-
+void I2C::initInstance(LogCallback cb) { new I2C(cb); }
 
 std::vector<unsigned char> I2C::recData(void)
 {
-
     return LastRecMsg;
 }
+
 void I2C::CleanRecMsg(void)
 {
     /*
@@ -249,8 +248,8 @@ unsigned int I2C::begin(std::string device)
     CleanRecMsg();
     SetDeviceName(device);
     PrintLog(Debug_log,(std::string) __func__ +(std::string)"Initialized");
-    this->Mutex.unlock();
     this->init=1;
+    this->Mutex.unlock();
     return 0;
 }
 unsigned int I2C::transaction(std::vector<unsigned char> address,std::vector<unsigned char> buffer, unsigned int len)
@@ -268,7 +267,7 @@ unsigned int I2C::transaction(std::vector<unsigned char> address,std::vector<uns
 
 // ConnModule class
 // Construction and destruction
-ConnModule::ConnModule(std::string filename,CallbackFunction cb)
+ConnModule::ConnModule(std::string filename,LogCallback cb)
 {
     I2C &ptrI2C = I2C::getInstance(cb);
     std::vector<unsigned char> address;
@@ -556,7 +555,7 @@ void ConnModule::PrintToCout(uint8_t status, string msg)
 
 // BoardModule class
 // Construction and destruction
-BoardModule::BoardModule(std::string filename,CallbackFunction cb)
+BoardModule::BoardModule(std::string filename, LogCallback cb)
 {
     I2C &ptrI2C = I2C::getInstance(cb);
     //this->m_cb=0;
@@ -567,6 +566,7 @@ BoardModule::BoardModule(std::string filename,CallbackFunction cb)
     //printf("%02x\n",address.front());
     this->addr=address;
 }
+
 BoardModule::~BoardModule()
 {
 

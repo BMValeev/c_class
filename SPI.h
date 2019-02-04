@@ -42,13 +42,13 @@ using namespace std;
 
 
 // Low level class that implements basic information exchange via SPI on Hamming board
-typedef std::function<void(uint8_t, std::string)> CallbackFunction;
+
 class SPI
 {
 public:
     static SPI & getInstance();
     static void initInstance();
-    uint8_t begin(std::string device,CallbackFunction cb);
+    uint8_t begin(std::string device,LogCallback cb);
     uint8_t transaction(std::vector<unsigned char> buffer, uint8_t ans_len);
     std::vector<unsigned char> recData(void);
 
@@ -74,14 +74,14 @@ private:
     void SetDeviceName(std::string Name);
     void CleanRecMsg(void);
     int SendPacket(std::vector<unsigned char> Buffer, uint8_t ans_len);
-    CallbackFunction m_cb = SPI::PrintToCout;
+    LogCallback m_cb = SPI::PrintToCout;
 };
 
 
 class MCU
 {
 public:
-    MCU(std::string filename,CallbackFunction cb);
+    MCU(std::string filename, LogCallback cb);
     ~MCU();
     uint8_t SetStanby(uint8_t Status);
     uint8_t CheckStatus(std::vector<unsigned char> &answer);
@@ -111,7 +111,7 @@ private:
     uint8_t WrongTransactions=3;
     void PrintLog(uint8_t status, std::string text);
     static void PrintToCout(uint8_t status, std::string msg);
-    CallbackFunction m_cb = MCU::PrintToCout;
+    LogCallback m_cb = MCU::PrintToCout;
 
 protected:
     uint8_t SendBool(uint8_t command,uint16_t value);
