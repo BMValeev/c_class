@@ -112,7 +112,7 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
         message_packet[1].len=10;
         cnt_all=10;
     }
-    else if (rlen>7)
+    else if (rlen>10)
     {
         message_packet[1].len=20;
         cnt_all=20;
@@ -133,22 +133,18 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
         message.nmsgs=1;
     }
     int file = open(this->DeviceName.c_str(), O_RDWR);
-    //cout<<"i2copen"<<endl;
     if (file == -1)
     {
         //errnum = errno;
         //fprintf(stderr, "Value of errno: %d\n", errno);
-        //perror("Error printed by perror");
         //fprintf(stderr, "Error opening file: %s\n", strerror( errnum ));
         PrintLog(Warning_log,(std::string) __func__+  (std::string)"Device open error");
         close(file);
         return NOK_I2C;
-        //perror("/dev/i2c-2");
     }
     if (ioctl(file, I2C_SLAVE, address.front()) < 0)
     {
         PrintLog(Warning_log,(std::string) __func__+  (std::string)"Failed to acquire bus access and/or talk to slave");
-        //perror("Failed to acquire bus access and/or talk to slave");
         close(file);
         return NOK_I2C;
     }
@@ -156,31 +152,25 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
     if (ret<0) {
         PrintLog(Warning_log,(std::string) __func__+  (std::string)strerror(-ret)
                              +(std::string)"Unable to send message");
-        //fprintf (stderr, "%s.\n", strerror(-ret));
         close(file);
         return NOK_I2C;
     }
     close(file);
     CleanRecMsg();
-    for (cnt = 0; cnt < (cnt_all); cnt++)
-    {
+    for (cnt = 0; cnt < (cnt_all); cnt++) {
         this->LastRecMsg.push_back(buf_rec[cnt]);
     }
-    if((this->LastRecMsg.front()==0x00))
-    {
+    if((this->LastRecMsg.front()==0x00)) {
         return NOK_I2C;
     }
-    if((this->LastRecMsg.front()==0xff))
-    {
+    if((this->LastRecMsg.front()==0xff)) {
         return NOK_I2C;
     }
     cnt_all=cnt_all-this->LastRecMsg.front();
-    while (--cnt_all)
-    {
+    while (--cnt_all) {
         this->LastRecMsg.pop_back();
     }
-    for (cnt=0;cnt<this->LastRecMsg.size();cnt++)
-    {
+    for (cnt=0;cnt<this->LastRecMsg.size();cnt++) {
         //data_rec=data_rec+(std::string)(this->LastRecMsg.data()[cnt]);
     }
     PrintLog(Debug_log,(std::string) __func__+  (std::string)"Send message"
@@ -188,55 +178,25 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
     return OK_I2C;
 }
 
-int I2C::SendRaw(std::vector<unsigned char> address,std::vector<unsigned char>, unsigned int len)
-{
-    this->LastRecMsg.clear();
-    this->LastRecMsg.push_back(0x02);
-    this->LastRecMsg.push_back(0x02);
-    this->LastRecMsg.push_back(CRC::crc8(this->LastRecMsg.data(),2));
-    return 0;
-}
 
 int I2C::SendPacket(std::vector<unsigned char> address,std::vector<unsigned char> buffer, unsigned int len)
 {
     unsigned char *temp_buf,*temp_addr,*temp_rec;
     std::vector<unsigned char> package;
-    std::vector<unsigned char> crc_tr;
-    std::vector<unsigned char> crc_rec;
     temp_buf=buffer.data();
     temp_addr=address.data();
-    crc_tr.push_back(temp_addr[0]<<1);
-    for(unsigned int i=0;i<buffer.size();i++)
-    {
-        crc_tr.push_back(temp_buf[i]);
-    }
     for(unsigned int i=0;i<buffer.size();i++)
     {
         package.push_back(temp_buf[i]);
     }
-    package.push_back(CRC::crc8(crc_tr.data(),crc_tr.size()));
     CleanRecMsg();
     if(SendRaw_new(address, package,len))
     {
         return NOK_I2C;
     }
     temp_rec=this->LastRecMsg.data();
-    crc_rec.push_back(temp_addr[0]<<1);
-    for(unsigned int i=0;i<this->LastRecMsg.size();i++)
-    {
-        crc_rec.push_back(temp_rec[i]);
-        //("%02x\n",temp_rec[i]);
-    }
-    //("%02x\n",CRC::crc8(crc_rec.data(),crc_rec.size()));
-    if(CRC::crc8(crc_rec.data(),crc_rec.size()))
-    {
-        PrintLog(Warning_log,(std::string) __func__ +(std::string)"CRC error");
-        return NOK_I2C;
-    }
-    this->LastRecMsg.pop_back();
     return OK_I2C;
 }
-
 unsigned int I2C::begin(std::string device)
 {
     this->Mutex.lock();
@@ -266,23 +226,52 @@ unsigned int I2C::transaction(std::vector<unsigned char> address,std::vector<uns
 }
 
 
+
+
+
+int I2C_ELEPS::SendPacket(std::vector<unsigned char> address,std::vector<unsigned char> buffer, unsigned int len) {
+    unsigned char *temp_buf,*temp_addr,*temp_rec;
+    std::vector<unsigned char> package;
+    std::vector<unsigned char> crc_tr;
+    std::vector<unsigned char> crc_rec;
+    temp_buf=buffer.data();
+    temp_addr=address.data();
+    crc_tr.push_back(temp_addr[0]<<1);
+    for(unsigned int i=0;i<buffer.size();i++) {
+        crc_tr.push_back(temp_buf[i]);
+    }
+    for(unsigned int i=0;i<buffer.size();i++) {
+        package.push_back(temp_buf[i]);
+    }
+    package.push_back(CRC::crc8(crc_tr.data(),crc_tr.size()));
+    CleanRecMsg();
+    if(SendRaw_new(address, package,len)) {
+        return NOK_I2C;
+    }
+    temp_rec=this->LastRecMsg.data();
+    crc_rec.push_back(temp_addr[0]<<1);
+    for(unsigned int i=0;i<this->LastRecMsg.size();i++) {
+        crc_rec.push_back(temp_rec[i]);
+        //("%02x\n",temp_rec[i]);
+    }
+    //("%02x\n",CRC::crc8(crc_rec.data(),crc_rec.size()));
+    if(CRC::crc8(crc_rec.data(),crc_rec.size())) {
+        PrintLog(Warning_log,(std::string) __func__ +(std::string)"CRC error");
+        return NOK_I2C;
+    }
+    this->LastRecMsg.pop_back();
+    return OK_I2C;
+}
+
 // ConnModule class
 // Construction and destruction
-ConnModule::ConnModule(std::string filename,CallbackFunction cb)
-{
-    I2C &ptrI2C = I2C::getInstance(cb);
+ConnModule::ConnModule(std::string filename,CallbackFunction cb) {
+    I2C_ELEPS &ptrI2C = I2C_ELEPS::getInstance(cb);
     std::vector<unsigned char> address;
-    //cout<<"3"<<endl;
-    //this->m_cb=0;
     this->m_cb=cb;
-    //cout<<"4"<<endl;
     ptrI2C.begin(filename);
-    //cout<<"5"<<endl;
     address.push_back(0b01110000);
-    //cout<<"55"<<endl;
-    //setAddress(address);
     this->addr=address;
-    //cout<<"6"<<endl;
 }
 ConnModule::~ConnModule() {
 
@@ -516,7 +505,7 @@ uint8_t ConnModule::ReadLastChangedValue(std::map <uint16_t,std::vector<unsigned
 
 std::vector<unsigned char> ConnModule::WriteArray(uint8_t command,std::vector<unsigned char> data,unsigned int len)
 {
-    I2C & ptrI2C=I2C::getInstance();
+    I2C_ELEPS & ptrI2C=I2C_ELEPS::getInstance();
     unsigned int cnt=this->WrongTransactions;
     unsigned int error;
     std::vector<unsigned char> msg, answer,null;
@@ -558,7 +547,7 @@ void ConnModule::PrintToCout(uint8_t status, string msg)
 // Construction and destruction
 BoardModule::BoardModule(std::string filename,CallbackFunction cb)
 {
-    I2C &ptrI2C = I2C::getInstance(cb);
+    I2C_ELEPS &ptrI2C = I2C_ELEPS::getInstance(cb);
     //this->m_cb=0;
     this->m_cb=cb;
     ptrI2C.begin(filename);
@@ -662,7 +651,7 @@ uint8_t BoardModule::SetVolume(unsigned char volume,std::vector<unsigned char> &
 }
 std::vector<unsigned char> BoardModule::WriteArray(uint8_t command,std::vector<unsigned char> data,unsigned int len)
 {
-    I2C & ptrI2C=I2C::getInstance();
+    I2C_ELEPS & ptrI2C=I2C_ELEPS::getInstance();
     unsigned int cnt=this->WrongTransactions;
     unsigned char *array=data.data();
     unsigned int error;

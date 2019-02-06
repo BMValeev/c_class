@@ -1,32 +1,21 @@
 #include "screenlight.h"
 
-ScreenLight::ScreenLight()
-    : PWM(SCREEN_LIGHT_PIN,
-          DEFAULT_SCREEN_LIGHT_POWER*DEFAULT_SCREEN_LIGHT_PWM_PERIOD_NS/100,
-          DEFAULT_SCREEN_LIGHT_PWM_PERIOD_NS)
-{    
-    start(); // Запускаем подсветку через ШИМ
+unsigned int  GetPower(BackLightInterface *backlight){
+    return backlight->GetPower();
 }
-
-bool ScreenLight::set_power(uint8_t power)
-{
-    if (power > 100)
-        return false;
-
-    if (m_power == power)
-        return false;
-
-    if (!set_params(power*DEFAULT_SCREEN_LIGHT_PWM_PERIOD_NS/100,
-                    DEFAULT_SCREEN_LIGHT_PWM_PERIOD_NS))
-        return false;
-
-    m_power = power;
-    return true;
+void SetPower(BackLightInterface *backlight,unsigned int l_power){
+    backlight->SetPower(l_power);
 }
-
-uint8_t ScreenLight::power_val()
-{
-    return m_power;
+void SetState(BackLightInterface *backlight,bool l_enable){
+    if(l_enable){
+        backlight->Start();
+    }
+    else{
+        backlight->Stop();
+    }
+}
+bool GetState(BackLightInterface *backlight){
+    return backlight->IsOn();
 }
 
 #ifdef C_CLASS_DEBUG
