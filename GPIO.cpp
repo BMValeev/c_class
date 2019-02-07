@@ -87,3 +87,31 @@ bool GPIO::Read(){
 		return (value=="1")? true:false ;		
 	}
 }
+#ifdef C_CLASS_DEBUG
+#include <unistd.h>
+#include <iostream>
+using namespace std;
+int main(void)
+{
+try{
+    GPIO pin11(67);
+    cout <<'1';
+    pin11.Set();
+    cout <<'2';
+    usleep(5*1000*1000);
+    cout <<'3';
+    pin11.Reset();
+    usleep(5*1000*1000);
+    cout <<'4';
+    pin11.SetDirection(false);
+    usleep(5*1000*1000);
+    cout <<'5';
+    cout << pin11.Read();
+    usleep(5*1000*1000);
+    cout <<'6';
+} catch (const char* msg) {
+     cerr << msg << endl;
+   }
+    return 1;
+}
+#endif

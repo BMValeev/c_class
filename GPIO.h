@@ -1,6 +1,5 @@
 #include <ifstream>	
 #include <ofstream>
-#include "stm32f303xc.h"
 
 class GPIO  {
 	public:
