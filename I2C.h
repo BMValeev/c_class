@@ -29,6 +29,8 @@
 #define OK_I2C 0x00
 #define NOK_I2C 0x01
 
+
+typedef std::function<void(uint8_t, std::string)> CallbackFunction;
 class I2C
 {
 public:
@@ -62,6 +64,28 @@ private:
     int SendPacket(std::vector<unsigned char> address,std::vector<unsigned char> buffer, unsigned int len);
     LogCallback m_cb = I2C::PrintToCout;
 
+private:
+    virtual int SendPacket(std::vector<unsigned char> address,std::vector<unsigned char> buffer, unsigned int len);
+    const unsigned int MaxLen=40;
+    int init=0;
+    void SetDeviceName(std::string Name);
+    std::mutex Mutex;
+    std::string DeviceName;
+    struct i2c_client *i2c_data;
+};
+
+class I2C_ELEPS : public I2C
+{
+public:
+    static I2C_ELEPS &getInstance(CallbackFunction cb=PrintToCout)  : getInstance(cb) {}
+    static void initInstance(CallbackFunction cb=PrintToCout)   :  initInstance(cb) {}
+
+protected:
+    I2C_ELEPS(CallbackFunction cb=PrintToCout) : I2C(cb)
+    {}
+    virtual ~I2C_ELEPS();
+    int SendPacket(std::vector<unsigned char> address,std::vector<unsigned char> buffer, unsigned int len) override;
+private:
 };
 
 class ConnModule
