@@ -21,6 +21,9 @@ bool ScreenLight::GetState(BackLightInterface *backlight){
 #ifdef C_CLASS_DEBUG
 #include <unistd.h>
 #include <iostream>
+#include "backlight_pwm.h"
+#include "backlight_driver.h"
+#include "screenlight.h"
 using namespace std;
 int main(void)
 {
@@ -29,30 +32,30 @@ try{
     backlight_driver driver;
     ScreenLight light;
     cout <<'1';
-    light.SetState(pwm, true);
+    light.SetState(&pwm, true);
     cout <<'2';
     usleep(5*1000*1000);
     cout <<'3';
-    light.SetPower(pwm,0);
+    light.SetPower(&pwm,(unsigned int) 0);
     usleep(5*1000*1000);
     cout <<'4';
-    light.SetPower(pwm,100);
+    light.SetPower(&pwm,(unsigned int) 100);
     usleep(5*1000*1000);
     cout <<'5';
-    light.SetPower(pwm,0);
+    light.SetPower(&pwm,(unsigned int) 0);
     usleep(5*1000*1000);
     cout <<'6';
-    light.SetState(driver, true);
+    light.SetState(&driver, true);
     cout <<'2';
     usleep(5*1000*1000);
     cout <<'3';
-    light.SetPower(driver,0);
+    light.SetPower(&driver,(unsigned int) 0);
     usleep(5*1000*1000);
     cout <<'4';
-    light.SetPower(driver,100);
+    light.SetPower(&driver,(unsigned int) 100);
     usleep(5*1000*1000);
     cout <<'5';
-    light.SetPower(driver,0);
+    light.SetPower(&driver,(unsigned int) 0);
     usleep(5*1000*1000);
     cout <<'6';
 } catch (const char* msg) {

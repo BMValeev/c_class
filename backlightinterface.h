@@ -8,10 +8,10 @@ class BackLightInterface {
 	virtual ~BackLightInterface() = 0;
 		bool IsOn();
 		unsigned int GetPower();
-		virtual void SetPower(uint8_t l_power) =0;
-		virtual void Start()=0;
-		virtual void Stop()=0;
-	private:
+		virtual bool SetPower(unsigned int l_power) =0;
+		virtual bool Start()=0;
+		virtual bool Stop()=0;
+	protected:
 		bool	m_enable;
 		unsigned int power;
 		

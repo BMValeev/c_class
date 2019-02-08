@@ -4,7 +4,6 @@
 
 #ifndef C_CLASS_BOARDMODULE_H
 #define C_CLASS_BOARDMODULE_H
-
 #include "I2C.h"
 class BoardModule
 {

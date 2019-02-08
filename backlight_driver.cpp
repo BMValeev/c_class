@@ -1,13 +1,12 @@
-#include "backlight_pwm.h"
+#include "backlight_driver.h"
 #include <fstream>
 #include <string>
 #include <iostream>
 using namespace std;
 #define BACKLIGHT_MAIN_PATH "/sys/class/backlight/pwm-backlight"
-
 backlight_driver::backlight_driver(){
     unsigned int max_bright;
-    ofstream interface(BACKLIGHT_MAIN_PATH+"/bl_power");
+    ofstream interface(std::string(BACKLIGHT_MAIN_PATH)+std::string("/bl_power"));
     if(interface.fail()) {
         interface.close();
         throw "There is no such backlight!";
@@ -19,7 +18,7 @@ backlight_driver::backlight_driver(){
     }
     interface<<'1';
     interface.close();
-    ifstream max_value(BACKLIGHT_MAIN_PATH+"/max_brightness");
+    ifstream max_value(std::string(BACKLIGHT_MAIN_PATH)+std::string("/max_brightness"));
     max_bright<<max_value.get();
     MaxResolution=(unsigned int) max_bright;
 
@@ -29,9 +28,9 @@ backlight_driver::~backlight_driver(){
     if (IsOn())
         Stop();
 }
-backlight_driver::SetPower(unsigned int l_power){
+bool backlight_driver::SetPower(unsigned int l_power){
     unsigned int value=l_power*MaxResolution/100;
-    ofstream interface(BACKLIGHT_MAIN_PATH+"/brightness");
+    ofstream interface(std::string(BACKLIGHT_MAIN_PATH)+std::string("/brightness"));
     if(interface.fail()) {
         interface.close();
         return false;
@@ -43,9 +42,10 @@ backlight_driver::SetPower(unsigned int l_power){
     }
     power=l_power;
     interface.close();
+    return true;
 }
-backlight_driver::Start(){
-    ofstream interface(PWM_MAIN_PATH+"/bl_power");
+bool backlight_driver::Start(){
+    ofstream interface(std::string(BACKLIGHT_MAIN_PATH)+std::string("/bl_power"));
     interface<<std::to_string(0);
     if(interface.fail()) {
         interface.close();
@@ -54,8 +54,8 @@ backlight_driver::Start(){
     m_enable=true;
     return true;
 }
-backlight_driver::Stop(){
-    ofstream interface(PWM_MAIN_PATH+"/bl_power");
+bool backlight_driver::Stop(){
+    ofstream interface(std::string(BACKLIGHT_MAIN_PATH)+std::string("/bl_power"));
     interface<<std::to_string(1);
     if(interface.fail()) {
         interface.close();

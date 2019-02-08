@@ -1,11 +1,10 @@
-#include <ifstream>	
-#include <ofstream>
-#include "backlight.h"
-class backlight_driver : public backlight {
+
+#include "backlightinterface.h"
+class backlight_driver : public BackLightInterface {
 	public:
-	void SetPower(unsigned int l_power) override;
-	void Start() override;
-	void Stop() override;
+	bool SetPower(unsigned int l_power) override;
+	bool Start() override;
+	bool Stop() override;
 	backlight_driver();
 	~backlight_driver();
 	private:

@@ -31,8 +31,7 @@ I2C& I2C::getInstance(LogCallback cb) {
     if (!theOneTrueInstance) initInstance(cb);
     return *theOneTrueInstance;
 }
-void I2C::initInstance(CallbackFunction cb) { new I2C(cb); }
-
+//void I2C::initInstance(CallbackFunction cb) { new I2C(cb); }
 void I2C::initInstance(LogCallback cb) { new I2C(cb); }
 
 std::vector<unsigned char> I2C::recData(void)
@@ -106,39 +105,34 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
     message_packet[1].flags=I2C_M_RD;//I2C_M_RD|I2C_M_RECV_LEN;I2C_M_NOSTART
     message_packet[1].buf=buf_rec;
     message_packet[1].len=10;
-    if (rlen==0)
-    {
+    if (rlen==0) {
         message_packet[1].len=10;
         cnt_all=10;
     }
-    else if (rlen>10)
-    {
+    else if (rlen>10) {
         message_packet[1].len=20;
         cnt_all=20;
     }
-    else
-    {
+    else {
         message_packet[1].len=rlen;
         cnt_all=rlen;
     }
     memset(&message, 0, sizeof(message));
     message.msgs=message_packet;
-    if (rlen!=0)
-    {
+    if (rlen!=0) {
         message.nmsgs=2;
     }
-    else
-    {
+    else {
         message.nmsgs=1;
     }
     int file = open(this->DeviceName.c_str(), O_RDWR);
     //cout<<"i2copen"<<endl;
     if (file == -1)
     {
-        //errnum = errno;
-        //fprintf(stderr, "Value of errno: %d\n", errno);
-        //perror("Error printed by perror");
-        //fprintf(stderr, "Error opening file: %s\n", strerror( errnum ));
+        /*errnum = errno;
+        fprintf(stderr, "Value of errno: %d\n", errno);
+        perror("Error printed by perror");
+        fprintf(stderr, "Error opening file: %s\n", strerror( errnum ));*/
         PrintLog(Warning_log,(std::string) __func__+  (std::string)"Device open error");
         close(file);
         return NOK_I2C;
@@ -208,7 +202,6 @@ int I2C::SendPacket(std::vector<unsigned char> address,std::vector<unsigned char
     {
         package.push_back(temp_buf[i]);
     }
-    package.push_back(CRC::crc8(crc_tr.data(),crc_tr.size()));
     CleanRecMsg();
     if(SendRaw_new(address, package,len))
     {
@@ -222,12 +215,6 @@ int I2C::SendPacket(std::vector<unsigned char> address,std::vector<unsigned char
         //("%02x\n",temp_rec[i]);
     }
     //("%02x\n",CRC::crc8(crc_rec.data(),crc_rec.size()));
-    if(CRC::crc8(crc_rec.data(),crc_rec.size()))
-    {
-        PrintLog(Warning_log,(std::string) __func__ +(std::string)"CRC error");
-        return NOK_I2C;
-    }
-    this->LastRecMsg.pop_back();
     return OK_I2C;
 }
 
@@ -260,7 +247,10 @@ unsigned int I2C::transaction(std::vector<unsigned char> address,std::vector<uns
 }
 
 
-
+I2C_ELEPS& I2C_ELEPS::getInstance(LogCallback cb) {
+   return I2C_ELEPS::getInstance(cb);
+}
+void I2C_ELEPS::initInstance(LogCallback cb) { I2C::initInstance(cb); }
 
 int I2C_ELEPS::SendPacket(std::vector<unsigned char> address,std::vector<unsigned char> buffer, unsigned int len) {
     unsigned char *temp_buf,*temp_addr,*temp_rec;

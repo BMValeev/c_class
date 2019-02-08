@@ -20,13 +20,13 @@ GPIOSysfs::GPIOSysfs(unsigned int pin){
 	SetDirection(true);
 	Set();
 }
-GPIOSysfs::~GPIO(){
+GPIOSysfs::~GPIOSysfs(){
 	ofstream interface("/sys/class/gpio/unexport");
 	interface << std::to_string(pin);
 	interface.close();
 }
 void GPIOSysfs::SetDirection(bool value){
-	ofstream interface("/sys/class/gpio/gpio"+std::to_string(gpio)+"/direction");
+	ofstream interface("/sys/class/gpio/gpio"+std::to_string(pin)+"/direction");
 	if(value){
 			interface <<"out";
 			out=true;
@@ -42,8 +42,8 @@ bool GPIOSysfs::GetDirection(){
 	return out;
 }
 bool GPIOSysfs::Reset(){
-	if(GetDirection){
-		ofstream interface("/sys/class/gpio/gpio"+std::to_string(gpio)+"/value");
+	if(GetDirection()){
+		ofstream interface("/sys/class/gpio/gpio"+std::to_string(pin)+"/value");
 		interface <<"0";
 		interface.close();
 		return true;
@@ -51,8 +51,8 @@ bool GPIOSysfs::Reset(){
 	return false;
 }
 bool GPIOSysfs::Set(){
-	if(GetDirection){
-		ofstream interface("/sys/class/gpio/gpio"+std::to_string(gpio)+"/value");
+	if(GetDirection()){
+		ofstream interface("/sys/class/gpio/gpio"+std::to_string(pin)+"/value");
 		interface <<"1";
 		interface.close();
 		return true;
@@ -60,32 +60,35 @@ bool GPIOSysfs::Set(){
 	return false;
 }
 bool GPIOSysfs::Toggle(){
-	std::string value;
-	if(GetDirection){
-		ifstream interface("/sys/class/gpio/gpio"+std::to_string(gpio)+"/value");
-		value  << interface;
+    char * value = new char [1];
+	if(GetDirection()){
+		ifstream interface("/sys/class/gpio/gpio"+std::to_string(pin)+"/value");
+        interface.read(value,1);
 		interface.close();
-		if (value=="1"){
-			ofstream r_interface("/sys/class/gpio/gpio"+std::to_string(gpio)+"/value");
-			interface <<"0";
+		if (*value=='1'){
+			ofstream r_interface("/sys/class/gpio/gpio"+std::to_string(pin)+"/value");
+            r_interface <<"0";
+            r_interface.close();
 		}
 		else{
-			ofstream r_interface("/sys/class/gpio/gpio"+std::to_string(gpio)+"/value");
-			interface <<"1";
+			ofstream r_interface("/sys/class/gpio/gpio"+std::to_string(pin)+"/value");
+            r_interface <<"1";
+            r_interface.close();
 		}
-		interface.close();
 		return true;
 	}
+    delete[] value;
 	return false;
 }
 bool GPIOSysfs::Read(){
-	std::string value;
-	if(!GetDirection){
-	ifstream interface("/sys/class/gpio/gpio"+std::to_string(gpio)+"/value");
-	value  << interface;
+    char * value = new char [1];
+	if(!GetDirection()){
+	ifstream interface("/sys/class/gpio/gpio"+std::to_string(pin)+"/value");
+	interface.read(value,1);
 	interface.close();
-		return (value=="1")? true:false ;		
+		return (*value=='1')? true:false ;
 	}
+    delete[] value;
 }
 #ifdef C_CLASS_DEBUG
 #include <unistd.h>

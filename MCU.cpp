@@ -1,7 +1,17 @@
 //
 // Created by eleps on 07.02.19.
 //
-
+using namespace std;
+#include <unistd.h>
+#include <stdint.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <linux/spi/spidev.h>
+#include <stdio.h>
+#include <errno.h>
+#include <stdlib.h>
+#include "crc.h"
+#include "SPI.h"
 #include "MCU.h"
 
 // MCU class

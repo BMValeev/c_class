@@ -1,7 +1,8 @@
 //
 // Created by eleps on 07.02.19.
 //
-
+using namespace std;
+#include "crc.h"
 #include "BoardModule.h"
 
 // BoardModule class
@@ -154,10 +155,10 @@ int main(void)
 {
     std::string filename="/dev/i2c-2";
     cout<<"1"<<endl;
-    ConnModule mcu(filename,PrintToC);
+    BoardModule mcu(filename,PrintToC);
     cout<<"2"<<endl;
     std::vector<unsigned char> data;
-    mcu.StartInit(data);
+    mcu.GetTools(data);
     cout<<"3\n";
     printf("%zu\n",data.size());
     return 1;

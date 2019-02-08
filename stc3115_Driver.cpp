@@ -1,7 +1,7 @@
 #include "stc3115_Driver.h" 
 #include "stc3115_Battery.h"
 #include "I2C.h"
-
+using namespace std;
 /*
   ===============================================================================
                    ##### STC3115 driver description #####
@@ -438,7 +438,7 @@ int STC3115::Powerdown(void)
 /*******************************************************************************
 * Function Name  : STC3115_conv
 * Description    : conversion utility 
-*  convert a raw 16-bit value from STC3115 registers into user units (mA, mAh, mV, °C)
+*  convert a raw 16-bit value from STC3115 registers into user units (mA, mAh, mV, ï¿½C)
 *  (optimized routine for efficient operation on 8-bit processors such as STM8)
 * Input          : value, factor
 * Return         : result = value * factor / 4096
@@ -498,7 +498,7 @@ int STC3115::ReadBatteryData(STC3115_BatteryData_TypeDef *BatteryData)
     /* temperature */
     value=data[10];
     if (value>=0x80) value -= 0x100;  /* convert to signed value */
-    BatteryData->Temperature = value*10;  /* result in 0.1°C */
+    BatteryData->Temperature = value*10;  /* result in 0.1ï¿½C */
 
     /* OCV */
     value=data[14]; value = (value<<8) + data[13];

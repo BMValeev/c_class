@@ -4,7 +4,6 @@
 
 #ifndef C_CLASS_CONNMODULE_H
 #define C_CLASS_CONNMODULE_H
-
 #include "I2C.h"
 class ConnModule
 {

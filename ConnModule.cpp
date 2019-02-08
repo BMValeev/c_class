@@ -1,6 +1,8 @@
 //
 // Created by eleps on 07.02.19.
 //
+using namespace std;
+#include "I2C.h"
 #include "ConnModule.h"
 
 // ConnModule class

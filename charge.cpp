@@ -1,6 +1,6 @@
 #include "charge.h"
 #include "I2C.h"
-
+using namespace std;
 Charge::Charge(std::string filename, LogCallback cb)
     : m_cb(cb)
 {
@@ -36,3 +36,21 @@ bool Charge::read_is_charging()
 {
     return false;
 }
+#ifdef C_CLASS_DEBUG
+void PrintToC(uint8_t status, string msg)
+{
+    cout<<status<<msg<<endl;
+}
+int main(void)
+{
+    std::string filename="/dev/i2c-2";
+    cout<<"1"<<endl;
+    Charge charge(filename,PrintToC);
+    cout<<"2"<<endl;
+    std::vector<unsigned char> data;
+    charge.read_charge();
+    cout<<"3\n";
+    printf("%zu\n",data.size());
+    return 1;
+}
+#endif

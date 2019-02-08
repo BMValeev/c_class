@@ -14,7 +14,7 @@ using namespace std;
 
 backlight_pwm::backlight_pwm(unsigned int l_pin){
     pin=l_pin;
-    ofstream interface(PWM_MAIN_PATH+std::to_string(pin())+"/export");
+    ofstream interface(PWM_MAIN_PATH+std::to_string(pin)+"/export");
     if(interface.fail()) {
         interface.close();
         throw "There is no such pwmchip!";
@@ -33,21 +33,22 @@ backlight_pwm::~backlight_pwm(){
     // Если запущен, останавливаем
     if (IsOn())
         Stop();
-    ofstream interface(PWM_MAIN_PATH+std::to_string(pin())+"/unexport");
+    ofstream interface(PWM_MAIN_PATH+std::to_string(pin)+"/unexport");
     if(interface.fail())
     {
         interface.close();
     }
     interface<<'0';
 }
-backlight_pwm::SetPower(unsigned int l_power){
+bool backlight_pwm::SetPower(unsigned int l_power){
 	uint32_t value=l_power*period/100;
 	SetDuty(value);
 	power=l_power;
 	duty=value;
+    return true;
 }
-backlight_pwm::Start(){
-    ofstream interface(PWM_MAIN_PATH+std::to_string(pin())+"/pwm0/enable");
+bool backlight_pwm::Start(){
+    ofstream interface(PWM_MAIN_PATH+std::to_string(pin)+"/pwm0/enable");
     if(interface.fail()) {
         interface.close();
         return false;
@@ -61,8 +62,8 @@ backlight_pwm::Start(){
     m_enable=true;
     return true;	
 }
-backlight_pwm::Stop(){
-    ofstream interface(PWM_MAIN_PATH+std::to_string(pin())+"/pwm0/enable");
+bool backlight_pwm::Stop(){
+    ofstream interface(PWM_MAIN_PATH+std::to_string(pin)+"/pwm0/enable");
     if(interface.fail()) {
         interface.close();
         return false;
@@ -76,8 +77,8 @@ backlight_pwm::Stop(){
     m_enable=false;
     return true;
 }
-backlight_pwm::SetPeriod(unsigned int l_period) {
-    ofstream interface(PWM_MAIN_PATH+std::to_string(pin())+"/pwm0/period");
+bool backlight_pwm::SetPeriod(unsigned int l_period) {
+    ofstream interface(PWM_MAIN_PATH+std::to_string(pin)+"/pwm0/period");
     if(interface.fail()) {
         interface.close();
         return false;
@@ -89,9 +90,10 @@ backlight_pwm::SetPeriod(unsigned int l_period) {
     }
     period=l_period;
     interface.close();
+    return true;
 }
-backlight_pwm::SetDuty(unsigned int l_duty){
-    ofstream interface(PWM_MAIN_PATH+std::to_string(pin())+"/pwm0/duty_cycle");
+bool backlight_pwm::SetDuty(unsigned int l_duty){
+    ofstream interface(PWM_MAIN_PATH+std::to_string(pin)+"/pwm0/duty_cycle");
     if(interface.fail()) {
         interface.close();
         return false;
@@ -103,4 +105,5 @@ backlight_pwm::SetDuty(unsigned int l_duty){
     }
     duty=l_duty;
     interface.close();
+    return true;
 }
