@@ -51,7 +51,7 @@ void I2C::SetDeviceName(std::string Name)
     /*
          * Used for configuration of the device in construction
          */
-    PrintLog(Debug_log,(std::string) __func__+  (std::string)"Device name set to :" +(std::string)DeviceName);
+    PrintLog(Debug_log,(std::string) __func__+  (std::string)"Device name set to :" +(std::string)Name);
     this->DeviceName=Name;
 }
 void I2C::PrintLog(uint8_t status, std::string text)
@@ -71,32 +71,18 @@ void I2C::PrintToCout(uint8_t status, string msg)
 int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned char> buffer, unsigned int rlen)
 {
     int ret;
-    //int errnum;
+    int errnum;
     unsigned int cnt, cnt_all;
-    /*unsigned char buf[10]= {0};
-    buf[0] = 0b11100000;
-    buf[1] = 0b0000001;
-    buf[2] = 0b0000011;
-    buf[3] = 0b0000111;
-    buf[4] = 0b0001111;
-    buf[5] = 0b0011111;
-    buf[6] = CRC8(buf,6);*/
-
-    /*PrintLog(Debug_log,(std::string) __func__+  (std::string)"Send to address:"
-                       +(std::string)address +(std::string)"Data: "+(std::string)buffer);*/
     unsigned char buf_rec[20]={0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
             ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+    unsigned int flag=0;
     std::string data_send,data_rec;
-    //data_send=data_send+(std::string)(address.front());
-    for (unsigned int cnt=0;cnt<buffer.size();cnt++)
-    {
-        //data_send=data_send+(std::string)(buffer.data()[cnt]);
-    }
-    PrintLog(Debug_log,(std::string) __func__+  (std::string)"Send message"
-                       +data_send);
     i2c_rdwr_ioctl_data message;
+    memset(&message, 0, sizeof(message));
     i2c_msg message_packet[2];
-    //printf("%02x\n",address.front());
+    cout<<rlen;
+    PrintLog(Debug_log,(std::string) __func__+  (std::string)" Send message");
+    memset(&message_packet, 0, sizeof(i2c_msg)*2);
     message_packet[0].addr=address.front();
     message_packet[0].flags=0;
     message_packet[0].len=buffer.size();
@@ -109,39 +95,25 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
         message_packet[1].len=10;
         cnt_all=10;
     }
-    else if (rlen>10) {
+    else if (rlen>20) {
         message_packet[1].len=20;
         cnt_all=20;
+        flag=1;
     }
     else {
         message_packet[1].len=rlen;
         cnt_all=rlen;
     }
-    memset(&message, 0, sizeof(message));
     message.msgs=message_packet;
-    if (rlen!=0) {
-        message.nmsgs=2;
-    }
-    else {
-        message.nmsgs=1;
-    }
+    message.nmsgs =(rlen!=0) ?  2:1;
     int file = open(this->DeviceName.c_str(), O_RDWR);
-    //cout<<"i2copen"<<endl;
-    if (file == -1)
-    {
-        /*errnum = errno;
-        fprintf(stderr, "Value of errno: %d\n", errno);
-        perror("Error printed by perror");
-        fprintf(stderr, "Error opening file: %s\n", strerror( errnum ));*/
+    if (file == -1) {
         PrintLog(Warning_log,(std::string) __func__+  (std::string)"Device open error");
         close(file);
         return NOK_I2C;
-        //perror("/dev/i2c-2");
     }
-    if (ioctl(file, I2C_SLAVE, address.front()) < 0)
-    {
+    if (ioctl(file, I2C_SLAVE, address.front()) < 0) {
         PrintLog(Warning_log,(std::string) __func__+  (std::string)"Failed to acquire bus access and/or talk to slave");
-        //perror("Failed to acquire bus access and/or talk to slave");
         close(file);
         return NOK_I2C;
     }
@@ -149,7 +121,7 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
     if (ret<0) {
         PrintLog(Warning_log,(std::string) __func__+  (std::string)strerror(-ret)
                              +(std::string)"Unable to send message");
-        //fprintf (stderr, "%s.\n", strerror(-ret));
+        fprintf (stderr, "%s.\n", strerror(-ret));
         close(file);
         return NOK_I2C;
     }
@@ -158,21 +130,19 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
     for (cnt = 0; cnt < (cnt_all); cnt++) {
         this->LastRecMsg.push_back(buf_rec[cnt]);
     }
-    if((this->LastRecMsg.front()==0x00)) {
+    if((this->LastRecMsg.front()==0x00)||(this->LastRecMsg.front()==0xff)) {
         return NOK_I2C;
     }
-    if((this->LastRecMsg.front()==0xff)) {
-        return NOK_I2C;
+    if (flag){
+        cnt_all=cnt_all-this->LastRecMsg.front();
+        while (--cnt_all) {
+            this->LastRecMsg.pop_back();
+        }
     }
-    cnt_all=cnt_all-this->LastRecMsg.front();
-    while (--cnt_all) {
-        this->LastRecMsg.pop_back();
-    }
-    for (cnt=0;cnt<this->LastRecMsg.size();cnt++) {
+    /*for (cnt=0;cnt<this->LastRecMsg.size();cnt++) {
         //data_rec=data_rec+(std::string)(this->LastRecMsg.data()[cnt]);
-    }
-    PrintLog(Debug_log,(std::string) __func__+  (std::string)"Send message"
-                       +data_rec);
+    }*/
+    PrintLog(Debug_log,(std::string) __func__+  (std::string)" Send message");
     return OK_I2C;
 }
 
@@ -215,6 +185,7 @@ int I2C::SendPacket(std::vector<unsigned char> address,std::vector<unsigned char
         //("%02x\n",temp_rec[i]);
     }
     //("%02x\n",CRC::crc8(crc_rec.data(),crc_rec.size()));
+    cout<<'4';
     return OK_I2C;
 }
 
@@ -228,6 +199,7 @@ unsigned int I2C::begin(std::string device)
         return 1;
     }
     CleanRecMsg();
+    std::cout << device;
     SetDeviceName(device);
     PrintLog(Debug_log,(std::string) __func__ +(std::string)"Initialized");
     this->init=1;
@@ -240,9 +212,11 @@ unsigned int I2C::transaction(std::vector<unsigned char> address,std::vector<uns
     if (SendPacket(address,buffer,len))
     {
         this->Mutex.unlock();
+        cout<<'55';
         return NOK_I2C;
     }
     this->Mutex.unlock();
+    cout<<'5';
     return OK_I2C;
 }
 

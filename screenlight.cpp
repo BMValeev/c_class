@@ -1,9 +1,11 @@
 #include "screenlight.h"
 
 unsigned int  ScreenLight::GetPower(BackLightInterface *backlight){
-    return backlight->GetPower();
+    unsigned int value=backlight->GetPower();
+    return value*100/max_power;
 }
 void ScreenLight::SetPower(BackLightInterface *backlight,unsigned int l_power){
+    l_power=(l_power*max_power)/100;
     backlight->SetPower(l_power);
 }
 void ScreenLight::SetState(BackLightInterface *backlight,bool l_enable){
@@ -17,7 +19,12 @@ void ScreenLight::SetState(BackLightInterface *backlight,bool l_enable){
 bool ScreenLight::GetState(BackLightInterface *backlight){
     return backlight->IsOn();
 }
-
+void ScreenLight::SetMaxPower(unsigned int value){
+    if (value<10 ||value >100){
+        return;
+    }
+    this->max_power=value;
+}
 #ifdef C_CLASS_DEBUG
 #include <unistd.h>
 #include <iostream>
