@@ -4,23 +4,16 @@
 using namespace std;
 #include "I2C.h"
 #include "ConnModule.h"
-
+#include "crc.h"
 // ConnModule class
 // Construction and destruction
 ConnModule::ConnModule(std::string filename,CallbackFunction cb) {
-    I2C_ELEPS &ptrI2C = I2C_ELEPS::getInstance(cb);
+    I2C &ptrI2C = I2C::getInstance(cb);
     std::vector<unsigned char> address;
-    //cout<<"3"<<endl;
-    //this->m_cb=0;
     this->m_cb=cb;
-    //cout<<"4"<<endl;
     ptrI2C.begin(filename);
-    //cout<<"5"<<endl;
     address.push_back(0b01110000);
-    //cout<<"55"<<endl;
-    //setAddress(address);
     this->addr=address;
-    //cout<<"6"<<endl;
 }
 ConnModule::~ConnModule() {
 
@@ -254,26 +247,33 @@ uint8_t ConnModule::ReadLastChangedValue(std::map <uint16_t,std::vector<unsigned
 
 std::vector<unsigned char> ConnModule::WriteArray(uint8_t command,std::vector<unsigned char> data,unsigned int len)
 {
-    I2C_ELEPS & ptrI2C=I2C_ELEPS::getInstance();
+    I2C & ptrI2C=I2C::getInstance();
     unsigned int cnt=this->WrongTransactions;
     unsigned int error;
+    unsigned char l_len=2;
     std::vector<unsigned char> msg, answer,null;
+    l_len=l_len+data.size();
+    msg.push_back(l_len);
     msg.push_back(command);
-    //for(int i=data.size()-1;i>=0;i--)
-    for(unsigned int i=0;i<data.size();i++)
-    {
+    for(unsigned int i=0;i<data.size();i++) {
         msg.push_back(data[i]);
     }
+    msg.push_back(CRC::crc8(msg.data(),msg.size()));
     while(cnt--) {
-        error=ptrI2C.transaction(this->addr,msg,len);
-        if (error==0) {
+        if(ptrI2C.transaction(this->addr,msg,len)==OK_I2C){
             answer=ptrI2C.recData();
-            answer.erase(answer.begin());
-            return answer;
+            l_len=answer.front();
+            while (answer.size() > l_len) {
+                answer.pop_back();
+            }
+            if (CRC::crc8(answer.data(),answer.size()-1)==answer.back()) {
+                answer.erase(answer.begin());
+                answer.pop_back();
+                return answer;
+            }
         }
     }
-    if (command==0x0C)
-    {
+    if (command==0x0C) {
         null.push_back('c');
         return null;
     }

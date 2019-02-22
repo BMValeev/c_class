@@ -7,7 +7,7 @@ charge.o:
 	${CXX} I2C.cpp crc.cpp stc3115_Driver.cpp charge.cpp chargeinterface.cpp  -std=c++11 -o charge.o -D C_CLASS_DEBUG
 
 boardmodule.o: 
-	${CXX} I2C.cpp BoardModule.cpp crc.cpp -std=c++11 -o connmodule.o -D C_CLASS_DEBUG
+	${CXX} I2C.cpp BoardModule.cpp crc.cpp -std=c++11 -o boardmodule.o -D C_CLASS_DEBUG
 
 connmodule.o: 
 	${CXX} I2C.cpp ConnModule.cpp crc.cpp -std=c++11 -o connmodule.o -D C_CLASS_DEBUG

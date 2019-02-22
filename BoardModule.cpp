@@ -9,7 +9,7 @@ using namespace std;
 // Construction and destruction
 BoardModule::BoardModule(std::string filename, LogCallback cb)
 {
-    I2C_ELEPS &ptrI2C = I2C_ELEPS::getInstance(cb);
+    I2C &ptrI2C = I2C::getInstance(cb);
     //this->m_cb=0;
     this->m_cb=cb;
     ptrI2C.begin(filename);
@@ -113,22 +113,31 @@ uint8_t BoardModule::SetVolume(unsigned char volume,std::vector<unsigned char> &
 }
 std::vector<unsigned char> BoardModule::WriteArray(uint8_t command,std::vector<unsigned char> data,unsigned int len)
 {
-    I2C_ELEPS & ptrI2C=I2C_ELEPS::getInstance();
+    I2C & ptrI2C=I2C::getInstance();
     unsigned int cnt=this->WrongTransactions;
     unsigned char *array=data.data();
     unsigned int error;
+    unsigned char l_len=2;
     std::vector<unsigned char> msg, answer,null;
+    l_len=l_len+data.size();
+    msg.push_back(l_len);
     msg.push_back(command);
-    for(int i=data.size()-1;i>=0;i--)
-    {
+    for(int i=data.size()-1;i>=0;i--) {
         msg.push_back(array[i]);
     }
+    msg.push_back(CRC::crc8(msg.data(),msg.size()));
     while(cnt--) {
-        error=ptrI2C.transaction(this->addr,msg,len);
-        if (error==0) {
+        if(ptrI2C.transaction(this->addr,msg,len)==OK_I2C){
             answer=ptrI2C.recData();
-            answer.erase(answer.begin());
-            return answer;
+            l_len=answer.front();
+            while (answer.size() > l_len) {
+                answer.pop_back();
+            }
+            if (CRC::crc8(answer.data(),answer.size()-1)==answer.back()) {
+                answer.erase(answer.begin());
+                answer.pop_back();
+                return answer;
+            }
         }
     }
     return null;

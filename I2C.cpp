@@ -73,8 +73,10 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
     int ret;
     int errnum;
     unsigned int cnt, cnt_all;
-    unsigned char buf_rec[20]={0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+    unsigned char buf_rec[40]={0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
             ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+    //unsigned char buf_rec[rlen];
+    //memset(&buf_rec, 0, sizeof(unsigned char)*rlen);
     unsigned int flag=0;
     std::string data_send,data_rec;
     i2c_rdwr_ioctl_data message;
@@ -91,19 +93,8 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
     message_packet[1].flags=I2C_M_RD;//I2C_M_RD|I2C_M_RECV_LEN;I2C_M_NOSTART
     message_packet[1].buf=buf_rec;
     message_packet[1].len=10;
-    if (rlen==0) {
-        message_packet[1].len=10;
-        cnt_all=10;
-    }
-    else if (rlen>20) {
-        message_packet[1].len=20;
-        cnt_all=20;
-        flag=1;
-    }
-    else {
-        message_packet[1].len=rlen;
-        cnt_all=rlen;
-    }
+    message_packet[1].len= (rlen==0)?10:rlen;
+    cnt_all= (rlen==0)?10:rlen;
     message.msgs=message_packet;
     message.nmsgs =(rlen!=0) ?  2:1;
     int file = open(this->DeviceName.c_str(), O_RDWR);
@@ -130,70 +121,32 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
     for (cnt = 0; cnt < (cnt_all); cnt++) {
         this->LastRecMsg.push_back(buf_rec[cnt]);
     }
-    if((this->LastRecMsg.front()==0x00)||(this->LastRecMsg.front()==0xff)) {
-        return NOK_I2C;
-    }
-    if (flag){
+    PrintLog(Debug_log,(std::string) __func__+  (std::string)" Send message");
+    return OK_I2C;
+}
+/*
+ *     if (flag){
         cnt_all=cnt_all-this->LastRecMsg.front();
         while (--cnt_all) {
             this->LastRecMsg.pop_back();
         }
     }
-    /*for (cnt=0;cnt<this->LastRecMsg.size();cnt++) {
-        //data_rec=data_rec+(std::string)(this->LastRecMsg.data()[cnt]);
-    }*/
-    PrintLog(Debug_log,(std::string) __func__+  (std::string)" Send message");
-    return OK_I2C;
-}
-
-int I2C::SendRaw(std::vector<unsigned char> address,std::vector<unsigned char>, unsigned int len)
-{
-    this->LastRecMsg.clear();
-    this->LastRecMsg.push_back(0x02);
-    this->LastRecMsg.push_back(0x02);
-    this->LastRecMsg.push_back(CRC::crc8(this->LastRecMsg.data(),2));
-    return 0;
-}
+ */
 
 int I2C::SendPacket(std::vector<unsigned char> address,std::vector<unsigned char> buffer, unsigned int len)
 {
-    unsigned char *temp_buf,*temp_addr,*temp_rec;
     std::vector<unsigned char> package;
-    std::vector<unsigned char> crc_tr;
-    std::vector<unsigned char> crc_rec;
-    temp_buf=buffer.data();
-    temp_addr=address.data();
-    crc_tr.push_back(temp_addr[0]<<1);
-    for(unsigned int i=0;i<buffer.size();i++)
-    {
-        crc_tr.push_back(temp_buf[i]);
-    }
-    for(unsigned int i=0;i<buffer.size();i++)
-    {
-        package.push_back(temp_buf[i]);
+    for(unsigned int i=0;i<buffer.size();i++) {
+        package.push_back(buffer[i]);
     }
     CleanRecMsg();
-    if(SendRaw_new(address, package,len))
-    {
-        return NOK_I2C;
-    }
-    temp_rec=this->LastRecMsg.data();
-    crc_rec.push_back(temp_addr[0]<<1);
-    for(unsigned int i=0;i<this->LastRecMsg.size();i++)
-    {
-        crc_rec.push_back(temp_rec[i]);
-        //("%02x\n",temp_rec[i]);
-    }
-    //("%02x\n",CRC::crc8(crc_rec.data(),crc_rec.size()));
-    cout<<'4';
-    return OK_I2C;
+    return (SendRaw_new(address, package,len)) ?NOK_I2C:OK_I2C;
 }
 
 unsigned int I2C::begin(std::string device)
 {
     this->Mutex.lock();
-    if (this->init==1)
-    {
+    if (this->init==1) {
         PrintLog(Info_log,"I2C initialized");
         this->Mutex.unlock();
         return 1;
@@ -209,53 +162,10 @@ unsigned int I2C::begin(std::string device)
 unsigned int I2C::transaction(std::vector<unsigned char> address,std::vector<unsigned char> buffer, unsigned int len)
 {
     this->Mutex.lock();
-    if (SendPacket(address,buffer,len))
-    {
+    if (SendPacket(address,buffer,len)) {
         this->Mutex.unlock();
-        cout<<'55';
         return NOK_I2C;
     }
     this->Mutex.unlock();
-    cout<<'5';
-    return OK_I2C;
-}
-
-
-I2C_ELEPS& I2C_ELEPS::getInstance(LogCallback cb) {
-   return I2C_ELEPS::getInstance(cb);
-}
-void I2C_ELEPS::initInstance(LogCallback cb) { I2C::initInstance(cb); }
-
-int I2C_ELEPS::SendPacket(std::vector<unsigned char> address,std::vector<unsigned char> buffer, unsigned int len) {
-    unsigned char *temp_buf,*temp_addr,*temp_rec;
-    std::vector<unsigned char> package;
-    std::vector<unsigned char> crc_tr;
-    std::vector<unsigned char> crc_rec;
-    temp_buf=buffer.data();
-    temp_addr=address.data();
-    crc_tr.push_back(temp_addr[0]<<1);
-    for(unsigned int i=0;i<buffer.size();i++) {
-        crc_tr.push_back(temp_buf[i]);
-    }
-    for(unsigned int i=0;i<buffer.size();i++) {
-        package.push_back(temp_buf[i]);
-    }
-    package.push_back(CRC::crc8(crc_tr.data(),crc_tr.size()));
-    CleanRecMsg();
-    if(SendRaw_new(address, package,len)) {
-        return NOK_I2C;
-    }
-    temp_rec=this->LastRecMsg.data();
-    crc_rec.push_back(temp_addr[0]<<1);
-    for(unsigned int i=0;i<this->LastRecMsg.size();i++) {
-        crc_rec.push_back(temp_rec[i]);
-        //("%02x\n",temp_rec[i]);
-    }
-    //("%02x\n",CRC::crc8(crc_rec.data(),crc_rec.size()));
-    if(CRC::crc8(crc_rec.data(),crc_rec.size())) {
-        PrintLog(Warning_log,(std::string) __func__ +(std::string)"CRC error");
-        return NOK_I2C;
-    }
-    this->LastRecMsg.pop_back();
     return OK_I2C;
 }
