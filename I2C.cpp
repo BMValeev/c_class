@@ -82,7 +82,6 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
     i2c_rdwr_ioctl_data message;
     memset(&message, 0, sizeof(message));
     i2c_msg message_packet[2];
-    cout<<rlen;
     PrintLog(Debug_log,(std::string) __func__+  (std::string)" Send message");
     memset(&message_packet, 0, sizeof(i2c_msg)*2);
     message_packet[0].addr=address.front();

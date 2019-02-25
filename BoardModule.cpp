@@ -118,26 +118,34 @@ std::vector<unsigned char> BoardModule::WriteArray(uint8_t command,std::vector<u
     unsigned char *array=data.data();
     unsigned int error;
     unsigned char l_len=2;
-    std::vector<unsigned char> msg, answer,null;
+    std::vector<unsigned char> msg, answer,null,l_answer;
     l_len=l_len+data.size();
+    msg.push_back(getAddress().front()<<1);
     msg.push_back(l_len);
     msg.push_back(command);
-    for(int i=data.size()-1;i>=0;i--) {
-        msg.push_back(array[i]);
+    for(unsigned int i=0;i<data.size();i++) {
+        msg.push_back(data[i]);
     }
     msg.push_back(CRC::crc8(msg.data(),msg.size()));
+    msg.erase(msg.begin());
     while(cnt--) {
         if(ptrI2C.transaction(this->addr,msg,len)==OK_I2C){
             answer=ptrI2C.recData();
-            l_len=answer.front();
-            while (answer.size() > l_len) {
-                answer.pop_back();
-            }
-            if (CRC::crc8(answer.data(),answer.size()-1)==answer.back()) {
+            l_len=answer.front()+1;
+            l_answer.clear();
+            l_answer.push_back(getAddress().front()<<1);
+            while (l_len--) {
+                l_answer.push_back(answer.front());
                 answer.erase(answer.begin());
-                answer.pop_back();
-                return answer;
             }
+            if (CRC::crc8(l_answer.data(),l_answer.size()-1)==l_answer.back()) {
+                PrintLog(Debug_log,(std::string) __func__ +(std::string)"CRC Ok");
+                l_answer.erase(l_answer.begin());
+                l_answer.erase(l_answer.begin());
+                l_answer.pop_back();
+                return l_answer;
+            }
+            PrintLog(Debug_log,(std::string) __func__ +(std::string)"CRC NOK");
         }
     }
     return null;
