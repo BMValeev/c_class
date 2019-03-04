@@ -25,8 +25,8 @@ backlight_pwm::backlight_pwm(unsigned int l_pin){
         throw "Chip is not exported";
     }
     interface.close();
-    SetPeriod(DEFAULT_PERIOD);
-    SetPower(100);
+    SetPeriod(DEFAULT_PERIOD_NS);
+    SetPower(DEFAULT_POWER);
     Start();
 }
 backlight_pwm::~backlight_pwm(){
