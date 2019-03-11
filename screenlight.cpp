@@ -7,6 +7,9 @@ unsigned int  ScreenLight::GetPower(BackLightInterface *backlight){
 
 void ScreenLight::SetPower(BackLightInterface *backlight,unsigned int l_power){
     l_power=(l_power*max_power)/100;
+    if (l_power<2){
+        l_power=2;
+    }
     backlight->SetPower(l_power);
 }
 
