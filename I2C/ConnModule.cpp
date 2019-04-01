@@ -4,7 +4,7 @@
 using namespace std;
 #include "I2C.h"
 #include "ConnModule.h"
-#include "crc.h"
+#include "../Rest/crc.h"
 // ConnModule class
 // Construction and destruction
 ConnModule::ConnModule(std::string filename,CallbackFunction cb) {

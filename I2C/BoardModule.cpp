@@ -2,7 +2,7 @@
 // Created by eleps on 07.02.19.
 //
 using namespace std;
-#include "crc.h"
+#include "../Rest/crc.h"
 #include "BoardModule.h"
 
 // BoardModule class

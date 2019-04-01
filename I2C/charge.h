@@ -5,7 +5,7 @@
 #include <string>
 
 #include "chargeinterface.h"
-#include "defs.h"
+#include "../defs.h"
 #include "stc3115_Driver.h"
 
 class Charge : public ChargeInterface

@@ -13,7 +13,7 @@ using namespace std;
 #include <linux/i2c-dev.h>
 #include <sys/stat.h>
 #include <linux/i2c.h>
-#include "crc.h"
+#include "../Rest/crc.h"
 #include "I2C.h"
 
 // I2C class

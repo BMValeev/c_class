@@ -18,7 +18,7 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "defs.h"
+#include "../defs.h"
 
 
 

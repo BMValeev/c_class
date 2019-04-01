@@ -29,7 +29,7 @@ using namespace std;
 #include <algorithm>
 #include <mutex>
 
-#include "defs.h"
+#include "../defs.h"
 
 #define ACK_SPI 0x30
 #define EXEC_SPI 0x03

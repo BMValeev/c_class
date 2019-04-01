@@ -3,10 +3,11 @@
 //
 
 #include "GPIO.h"
+#include "gpiointerface.h"
 void SetDirection(GPIOInterface *gpio, bool value) {
     gpio->SetDirection(value);
 }
-bool GetDirection(){
+bool GetDirection(GPIOInterface *gpio){
     return gpio->GetDirection();
 }
 void Reset(GPIOInterface *gpio){

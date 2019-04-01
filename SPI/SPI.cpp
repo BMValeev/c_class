@@ -10,7 +10,7 @@ using namespace std;
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
-#include "crc.h"
+#include "../Rest/crc.h"
 #include "SPI.h"
 
 
