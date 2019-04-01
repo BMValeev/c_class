@@ -12,6 +12,7 @@
 #include <iostream>
 #include <chrono>
 using namespace std;
+vector<std::string> Serial::paths;
 Serial::Serial(const char *pathname, speed_t speed,LogCallback cb){
     int fd;
     std::string path(pathname);

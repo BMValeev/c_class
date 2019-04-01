@@ -47,5 +47,4 @@ protected:
     speed_t cur_speed;
     static vector<std::string> paths;
 };
-vector<std::string> Serial::paths;
 #endif //HARDWARECLASSES_SERIAL_H
