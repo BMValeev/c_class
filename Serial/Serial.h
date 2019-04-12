@@ -7,6 +7,7 @@
 #include <mutex>
 #include <vector>
 #include <thread>
+#include <functional>
 #include <termios.h>
 #define CHECK_STATUS       1
 #define CHECK_ERROR       2
@@ -18,7 +19,7 @@
 #define RESTART_CAMERA   8
 #define TEST1           9
 
-
+using namespace std;
 typedef std::function<void(uint8_t, std::string)> LogCallback;
 enum Log_status { Info_log = 1, Debug_log=2, Warning_log= 3, Critical_log=4 };
 
