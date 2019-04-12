@@ -1,7 +1,7 @@
 //
 // Created by eleps on 07.02.19.
 //
-using namespace std;
+
 #include <unistd.h>
 #include <stdint.h>
 #include <fcntl.h>
@@ -14,404 +14,297 @@ using namespace std;
 #include "SPI.h"
 #include "MCU.h"
 
-// MCU class
-// Construction and destruction
-MCU::MCU(std::string filename,LogCallback cb)
+MCU::MCU(std::string filename, LogCallback cb) : m_cb(cb), m_filename(filename)
 {
-    this->m_cb=cb;
-    SPI & ptrSPI=SPI::getInstance();
-    ptrSPI.begin(filename,cb);
-}
-MCU::~MCU(){
-
+    SPI::getInstance().begin(m_filename,m_cb);
 }
 
-void MCU::PrintLog(uint8_t status, std::string text)
+uint8_t MCU::setStanby(uint8_t status, int attempts)
 {
-    if (this->m_cb!=0)
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    return sendBool(SET_STANDBY, status, attempts);
+}
+
+uint8_t MCU::checkStatus(std::vector<uint8_t> &answer, int attempts)
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+
+    std::vector<uint8_t> tx_msg;
+    uint8_t rx_len = getRxCnt(REQUEST_STATUS);
+    tx_msg.push_back(REQUEST_STATUS);
+
+    return send(tx_msg, answer, rx_len, attempts);
+}
+
+uint8_t MCU::setSubprogram(uint8_t subprogramCut, uint8_t subprogramCoag, int attempts)
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    return send2Uint8(SET_SUBPROGRAM, subprogramCut, subprogramCoag, attempts);
+}
+
+uint8_t MCU::setConnector(uint8_t connector, int attempts)
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    return send1Uint8(SET_CONNECTOR, connector, attempts);
+}
+
+uint8_t MCU::setMaxVoltage(uint16_t cutVoltage, uint16_t coagVoltage, int attempts)
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    return send2Uint16(SET_MAX_U, cutVoltage, coagVoltage, attempts);
+}
+
+uint8_t MCU::setPower(uint16_t cutPower, uint16_t coagPower, int attempts)
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    return send2Uint16(SET_POWER, cutPower, coagPower, attempts);
+}
+
+uint8_t MCU::setMaxTime(uint8_t maxTime , int attempts)
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    return send1Uint8(SET_MAX_ACT_TIME, maxTime, attempts);
+}
+
+uint8_t MCU::setAutoStartDelay(uint8_t delayTime , int attempts)
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    return send1Uint8(SET_AUTOSTART_DELAY, delayTime, attempts);
+}
+
+uint8_t MCU::setAutoStopResistance(uint16_t resistance , int attempts)
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    return send1Uint16(SET_AUTOSTOP_THRESHOLD, resistance, attempts);
+}
+
+uint8_t MCU::setIrrigation(uint8_t enabled , int attempts)
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    return sendBool(SET_IRRIGATION, enabled, attempts);
+}
+
+uint8_t MCU::setIrrigationDelay(uint8_t delay , int attempts)
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    return send1Uint8(SET_IRRIGATION_DELAY, delay, attempts);
+}
+
+uint8_t MCU::setModFrequency(uint16_t frequencyCut, uint16_t frequencyCoag, int attempts)
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    return send2Uint16(SET_MOD_DUTY_CYCLE, frequencyCut, frequencyCoag, attempts);
+}
+
+uint8_t MCU::setModDutyCycle(uint8_t dutyCycleCut , uint8_t dutyCycleCoag, int attempts)
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    return send2Uint8(SET_MOD_DUTY_CYCLE, dutyCycleCut, dutyCycleCoag, attempts);
+}
+
+uint8_t MCU::setCircuit(uint8_t circuitCut, uint8_t circuitCoag, int attempts)
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    return send2Uint8(SET_CIRCUIT, circuitCut, circuitCoag, attempts);
+}
+
+uint8_t MCU::renewAll(uint8_t connector, uint8_t routineCut, uint8_t routineCoag, uint16_t maxVoltageCut,
+                      uint16_t maxVoltageCoag, uint16_t powerCut, uint16_t powerCoag, uint8_t maxTime,
+                      uint8_t autostart, uint8_t autostartDelay, uint8_t autostop, uint16_t autostopResistance,
+                      uint8_t irrigation, uint8_t irrigationDelay, uint16_t cutPWMFrequency,
+                      uint16_t coagPWMFrequency, uint8_t dutyCycleCut, uint8_t dutyCycleCoag,
+                      uint8_t filterCut, uint8_t filterCoag, uint8_t cutPedal, uint8_t coagPedal, int attempts)
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    std::vector<uint8_t> tx_msg, answer;
+    uint8_t rx_len = getRxCnt(SET_ALL);
+    // Fill the buffer
+    tx_msg.push_back(SET_ALL); // command code
+    tx_msg.push_back(connector);
+    tx_msg.push_back(routineCut);
+    tx_msg.push_back(routineCoag);
+    tx_msg.push_back(maxVoltageCut & 0xFF); // lsb
+    tx_msg.push_back(maxVoltageCut >> 8); // msb
+    tx_msg.push_back(maxVoltageCoag & 0xFF);
+    tx_msg.push_back(maxVoltageCoag >> 8);
+    tx_msg.push_back(powerCut & 0xFF);
+    tx_msg.push_back(powerCut >> 8);
+    tx_msg.push_back(powerCoag & 0xFF);
+    tx_msg.push_back(powerCoag >> 8);
+    tx_msg.push_back(maxTime);
+    tx_msg.push_back(autostart);
+    tx_msg.push_back(autostartDelay);
+    tx_msg.push_back(autostop);
+    tx_msg.push_back(autostopResistance & 0xFF);
+    tx_msg.push_back(autostopResistance >> 8);
+    tx_msg.push_back(irrigation);
+    tx_msg.push_back(irrigationDelay);
+    tx_msg.push_back(cutPWMFrequency & 0xFF);
+    tx_msg.push_back(cutPWMFrequency >> 8);
+    tx_msg.push_back(coagPWMFrequency & 0xFF);
+    tx_msg.push_back(coagPWMFrequency >> 8);
+    tx_msg.push_back(dutyCycleCut);
+    tx_msg.push_back(dutyCycleCoag);
+    tx_msg.push_back(filterCut);
+    tx_msg.push_back(filterCoag);
+    tx_msg.push_back(cutPedal);
+    tx_msg.push_back(coagPedal);
+
+    return send(tx_msg, answer, rx_len, attempts);
+}
+
+void MCU::printLog(uint8_t status, std::string text)
+{
+    if (m_cb != nullptr)
     {
         m_cb(status,text);
     }
 }
 
-void MCU::PrintToCout(uint8_t status, string msg)
+void MCU::printToCout(uint8_t status, std::string msg)
 {
-    cout<<status<<msg<<endl;
+    std::cout << status << msg << std::endl;
 }
 
-uint8_t MCU::SetStanby(uint8_t Status)
+uint8_t MCU::getRxCnt(uint8_t cmd)
 {
-    PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started");
-    return SendBool(0x00, Status);
+    if (cmd == REQUEST_STATUS)
+        return 5;
+
+    return 3;
 }
-uint8_t MCU::CheckStatus(std::vector<unsigned char> &answer)
+
+uint8_t MCU::sendBool(uint8_t command, bool value, int attempts)
 {
-    PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started");
-    SPI & ptrSPI=SPI::getInstance();
-    uint16_t cnt=this->WrongTransactions;
-    uint16_t error;
-    std::vector<unsigned char> msg,  null;
-    msg.push_back(0x01);
-    while(cnt--)
+    //PrintLog(Debug_log,
+    //         static_cast<std::string>(__func__) + " started");
+    std::vector<uint8_t> tx_msg, answer;
+    uint8_t rx_len = getRxCnt(command);
+
+    tx_msg.push_back(command);
+    tx_msg.push_back(value? 0x01 : 0x00);
+
+    return send(tx_msg, answer, rx_len, attempts);
+}
+
+uint8_t MCU::send1Uint16(uint8_t command, uint16_t value, int attempts)
+{   
+    //PrintLog(Debug_log,
+    //         static_cast<std::string>(__func__) + " started");
+    std::vector<uint8_t> tx_msg, answer;
+    uint8_t rx_len = getRxCnt(command);
+
+    tx_msg.push_back(command);
+    tx_msg.push_back(value  & 0xff);
+    tx_msg.push_back(value >> 8);
+
+    return send(tx_msg, answer, rx_len, attempts);
+}
+
+uint8_t MCU::send1Uint8(uint8_t command, uint8_t value, int attempts)
+{
+    //PrintLog(Debug_log,
+    //         static_cast<std::string>(__func__) + " started");
+    std::vector<uint8_t> tx_msg, answer;
+    uint8_t rx_len = getRxCnt(command);
+
+    tx_msg.push_back(command);
+    tx_msg.push_back(value);
+
+    return send(tx_msg, answer, rx_len, attempts);
+}
+
+uint8_t MCU::send2Uint8(uint8_t command, uint8_t value1, uint8_t value2, int attempts)
+{
+    //PrintLog(Debug_log,
+    //         static_cast<std::string>(__func__) + " started");
+    std::vector<uint8_t> tx_msg, answer;
+    uint8_t rx_len = getRxCnt(command);
+
+    tx_msg.push_back(command);
+    tx_msg.push_back(value1);
+    tx_msg.push_back(value2);
+
+    return send(tx_msg, answer, rx_len, attempts);
+}
+
+uint8_t MCU::send2Uint16(uint8_t command, uint16_t value1, uint16_t value2, int attempts)
+{
+    //PrintLog(Debug_log,
+    //         static_cast<std::string>(__func__) + " started");
+    std::vector<uint8_t> tx_msg, answer;
+    uint8_t rx_len = getRxCnt(command);
+
+    tx_msg.push_back(command);
+    tx_msg.push_back(value1  & 0xff);
+    tx_msg.push_back(value1 >> 8);
+    tx_msg.push_back(value2  & 0xff);
+    tx_msg.push_back(value2 >> 8);
+
+    return send(tx_msg, answer, rx_len, attempts);
+}
+
+uint8_t MCU::send(std::vector<uint8_t> &tx_msg, std::vector<uint8_t> &rx_msg, uint8_t rx_len, int attempts)
+{
+    SPI& spi = SPI::getInstance();
+
+    while(attempts--)
     {
-        PrintLog(Debug_log, (std::string) __func__+  (std::string)"Transactions left: "+ std::to_string(cnt) );
-        error=ptrSPI.transaction(msg,5);
-        if (error==0)
+        printLog(Debug_log,
+                 static_cast<std::string>(__func__) + "Transactions left: " + std::to_string(attempts));
+
+        // Send message
+        if (spi.transaction(tx_msg,rx_len))
+            continue;
+
+        rx_msg = spi.recData();
+
+        if (rx_msg.size() != rx_len-1)
+            continue;
+
+        rx_msg.erase(rx_msg.begin());
+
+        if (rx_msg.front() != (ACK_SPI|EXEC_SPI))
         {
-            answer = ptrSPI.recData();
-            if (answer.size()==4)
+            if (attempts == 0)
             {
-                answer.erase(answer.begin());
-                if(answer.front()==(ACK_SPI|EXEC_SPI))
+                if ( (rx_msg.front() & ACK_SPI) != ACK_SPI )
                 {
-                    answer.erase(answer.begin());
-                    PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully");
-                    return OK_SPI;
+                    return NACK; // not acknowledged
                 }
-                else if (cnt==0)
+                else
                 {
-                    if ((answer.front()&ACK_SPI)!=(ACK_SPI))
-                    {
-                        return NACK;
-                    }
-                    else
-                    {
-                        return NOK_SPI;
-                    }
+                    return NOK_SPI; // not executed
                 }
+            } else {
+                continue;
             }
         }
-    }
-    return TR_ERR_SPI;
-}
-uint8_t MCU::SetSubroutine(uint8_t Routine1,uint8_t Routine2)
-{
-    PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started");
-    return SendInt(0x03, uint16_t(Routine2<<8|Routine1));
-}
-uint8_t MCU::SetConnector(uint8_t  Connector)
-{
-    PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started");
-    return SendChar(0x04, Connector);
-}
-uint8_t MCU::SetMaxVoltage(uint16_t BlueButton, uint16_t YellowButton)
-{
-    PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started");
-    return SendDoubleInt(0x05, BlueButton,YellowButton);
-}
-uint8_t MCU::SetPower(uint16_t BlueButton, uint16_t YellowButton)
-{
-    PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started");
-    return SendDoubleInt(0x06, BlueButton,YellowButton);
-}
-uint8_t MCU::SetMaxTime(uint8_t MaxTime )
-{
-    PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started");
-    return SendChar(0x07, MaxTime);
-}
-uint8_t MCU::SetAutoStart(uint8_t Enabled )
-{
-    PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started");
-    return SendBool(0x08, Enabled);
-}
-uint8_t MCU::SetAutoStartDelay(uint8_t DelayTime )
-{
-    PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started");
-    return SendChar(0x09, DelayTime);
-}
-uint8_t MCU::SetAutoStop(uint8_t Enabled )
-{
-    PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started");
-    return SendBool(0x0A, Enabled);
-}
-uint8_t MCU::SetAutoStopResistance(uint16_t Resistance )
-{
-    PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started");
-    return SendInt(0x0b, Resistance);
-}
-uint8_t MCU::SetIrrigation(uint8_t Enabled )
-{
-    PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started");
-    return SendBool(0x0c, Enabled);
-}
-uint8_t MCU::SetIrrigationDelay(uint8_t Delay )
-{
-    PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started");
-    return SendChar(0x0d, Delay);
-}
 
-uint8_t MCU::SetModulation(uint16_t Frequency1, uint16_t Frequency2)
-{
-    PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started");
-    return SendDoubleInt(0x0E, Frequency1,Frequency2);
-}
-uint8_t MCU::SetDutyCycle(uint8_t DutyCycle1 ,uint8_t DutyCycle2)
-{
-    PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started");
-    return SendInt(0x0f, uint16_t(DutyCycle2<<8|DutyCycle1));
-}
-
-uint8_t MCU::RenewAll(uint8_t connector, uint8_t routineCut, uint8_t routineCoag, uint16_t maxVoltageCut,
-                      uint16_t maxVoltageCoag, uint16_t powerCut, uint16_t powerCoag, uint8_t maxTime,
-                      uint8_t autostart, uint8_t autostartDelay, uint8_t autostop, uint16_t autostopResistance,
-                      uint8_t irrigation, uint8_t irrigationDelay, uint16_t cutPWMFrequency,
-                      uint16_t coagPWMFrequency, uint8_t dutyCycleCut, uint8_t dutyCycleCoag,
-                      uint8_t filterCut, uint8_t filterCoag, uint8_t cutPedal, uint8_t coagPedal)
-{
-    SPI & ptrSPI=SPI::getInstance();
-    uint8_t cnt=this->WrongTransactions;
-    uint16_t error;
-    std::vector<unsigned char> msg, answer;
-    // Fill the buffer
-    msg.push_back(0x13); // command code
-    msg.push_back(connector);
-    msg.push_back(routineCut);
-    msg.push_back(routineCoag);
-    msg.push_back(maxVoltageCut & 0xFF); // lsb
-    msg.push_back(maxVoltageCut >> 8); // msb
-    msg.push_back(maxVoltageCoag & 0xFF);
-    msg.push_back(maxVoltageCoag >> 8);
-    msg.push_back(powerCut & 0xFF);
-    msg.push_back(powerCut >> 8);
-    msg.push_back(powerCoag & 0xFF);
-    msg.push_back(powerCoag >> 8);
-    msg.push_back(maxTime);
-    msg.push_back(autostart);
-    msg.push_back(autostartDelay);
-    msg.push_back(autostop);
-    msg.push_back(autostopResistance & 0xFF);
-    msg.push_back(autostopResistance >> 8);
-    msg.push_back(irrigation);
-    msg.push_back(irrigationDelay);
-    msg.push_back(cutPWMFrequency & 0xFF);
-    msg.push_back(cutPWMFrequency >> 8);
-    msg.push_back(coagPWMFrequency & 0xFF);
-    msg.push_back(coagPWMFrequency >> 8);
-    msg.push_back(dutyCycleCut);
-    msg.push_back(dutyCycleCoag);
-    msg.push_back(filterCut);
-    msg.push_back(filterCoag);
-    msg.push_back(cutPedal);
-    msg.push_back(coagPedal);
-    while(cnt--)
-    {
-        PrintLog(Debug_log, (std::string) __func__+  (std::string)"Transactions left: "+ std::to_string(cnt) );
-        error=ptrSPI.transaction(msg,3);
-        if (error==0)
-        {
-            answer=ptrSPI.recData();
-            if (answer.size()==2)
-            {
-                answer.erase(answer.begin());
-                if (answer.front()==(ACK_SPI|EXEC_SPI))
-                {
-                    PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully");
-                    return OK_SPI;
-                }
-                else if (cnt==0)
-                {
-                    if ((answer.front()&ACK_SPI)!=(ACK_SPI))
-                    {
-                        return NACK;
-                    }
-                    else
-                    {
-                        return NOK_SPI;
-                    }
-                }
-            }
-        }
-    }
-    return TR_ERR_SPI;
-}
-uint8_t MCU::SetFilter(uint8_t  Filter1,uint8_t  Filter2)
-{
-    PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started");
-    return SendInt(0x10, uint16_t(Filter2<<8|Filter1));
-}
-uint8_t MCU::SetPedalCut(uint8_t  Status)
-{
-    PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started");
-    return SendBool(0x11, Status);
-}
-uint8_t MCU::SetPedalCoag(uint8_t  Status)
-{
-    PrintLog(Info_log,(std::string) __func__+  (std::string)"Function started");
-    return SendBool(0x12, Status);
-}
-
-
-
-uint8_t MCU::SendBool(uint8_t command,uint16_t value)
-{
-    //PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started");
-    SPI & ptrSPI=SPI::getInstance();
-    unsigned int cnt=this->WrongTransactions;
-    unsigned int error;
-    std::vector<unsigned char> msg, answer;
-    msg.push_back(command);
-    msg.push_back(value ? 0x01 : 0x00);
-    while(cnt--)
-    {
-        PrintLog(Debug_log, (std::string) __func__+  (std::string)"Transactions left: "+ std::to_string(cnt) );
-        error=ptrSPI.transaction(msg,3);
-        if (error==0) {
-            answer = ptrSPI.recData();
-            if (answer.size() == 2) {
-                answer.erase(answer.begin());
-                if (answer.front() == (ACK_SPI | EXEC_SPI)) {
-                    PrintLog(Debug_log, (std::string) __func__ + (std::string) "Function ended succesfully");
-                    return OK_SPI;
-                } else if (cnt == 0) {
-                    if ((answer.front() & ACK_SPI) != (ACK_SPI)) {
-                        return NACK;
-                    } else {
-                        return NOK_SPI;
-                    }
-                }
-            }
-        }
-    }
-    return TR_ERR_SPI;
-}
-uint8_t MCU::SendInt(uint8_t command,uint16_t value)
-{
-    //PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started");
-    SPI & ptrSPI=SPI::getInstance();
-    unsigned int cnt=this->WrongTransactions;
-    unsigned int error;
-    std::vector<unsigned char> msg, answer;
-    msg.push_back(command);
-    msg.push_back(uint8_t(value&0xff));
-    msg.push_back(uint8_t(value>>8));
-    while(cnt--)
-    {
-        PrintLog(Debug_log, (std::string) __func__+  (std::string)"Transactions left: "+ std::to_string(cnt) );
-        error=ptrSPI.transaction(msg,3);
-        if (error==0)
-        {
-            answer=ptrSPI.recData();
-            if (answer.size()==2)
-            {
-                answer.erase(answer.begin());
-                if (answer.front()==(ACK_SPI|EXEC_SPI))
-                {
-                    PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully");
-                    return OK_SPI;
-                }
-                else if (cnt==0)
-                {
-                    if ((answer.front()&ACK_SPI)!=(ACK_SPI))
-                    {
-                        return NACK;
-                    }
-                    else
-                    {
-                        return NOK_SPI;
-                    }
-                }            }
-        }
-    }
-    return TR_ERR_SPI;
-}
-uint8_t MCU::SendChar(uint8_t command,uint8_t value)
-{
-    //PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started");
-    SPI & ptrSPI=SPI::getInstance();
-    unsigned int cnt=this->WrongTransactions;
-    unsigned int error;
-    std::vector<unsigned char> msg, answer;
-    msg.push_back(command);
-    msg.push_back(uint8_t(value&0xff));
-    while(cnt--)
-    {
-        PrintLog(Debug_log, (std::string) __func__+  (std::string)"Transactions left: "+ std::to_string(cnt) );
-        error=ptrSPI.transaction(msg,3);
-        if (error==0)
-        {
-            answer=ptrSPI.recData();
-            if (answer.size()==2)
-            {
-                answer.erase(answer.begin());
-                if (answer.front()==(ACK_SPI|EXEC_SPI))
-                {
-                    PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully");
-                    return OK_SPI;
-                }
-                else if (cnt==0)
-                {
-                    if ((answer.front()&ACK_SPI)!=(ACK_SPI))
-                    {
-                        return NACK;
-                    }
-                    else
-                    {
-                        return NOK_SPI;
-                    }
-                }            }
-        }
-    }
-    return TR_ERR_SPI;
-}
-uint8_t MCU::SendDoubleInt(uint8_t command,uint16_t value1,uint16_t value2)
-{
-    //PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started");
-    SPI & ptrSPI=SPI::getInstance();
-    uint8_t cnt=this->WrongTransactions;
-    uint16_t error;
-    std::vector<unsigned char> msg, answer;
-    msg.push_back(command);
-    msg.push_back((value1&0xff));
-    msg.push_back((value1>>8));
-    msg.push_back(value2&0xff);
-    msg.push_back((value2>>8));
-    while(cnt--)
-    {
-        PrintLog(Debug_log, (std::string) __func__+  (std::string)"Transactions left: "+ std::to_string(cnt) );
-        error=ptrSPI.transaction(msg,3);
-        if (error==0)
-        {
-            answer=ptrSPI.recData();
-            if (answer.size()==2)
-            {
-                answer.erase(answer.begin());
-                if (answer.front()==(ACK_SPI|EXEC_SPI))
-                {
-                    PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully");
-                    return OK_SPI;
-                }
-                else if (cnt==0)
-                {
-                    if ((answer.front()&ACK_SPI)!=(ACK_SPI))
-                    {
-                        return NACK;
-                    }
-                    else
-                    {
-                        return NOK_SPI;
-                    }
-                }
-            }
-        }
+        // Acknowledged & executed
+        rx_msg.erase(rx_msg.begin()); // Remove acknowledge byte
+        printLog(Debug_log,
+                 static_cast<std::string>(__func__) + " - success");
+        return OK_SPI;
     }
     return TR_ERR_SPI;
 }
 
 #ifdef C_CLASS_DEBUG
 // Stand-alone compile
-void PrintToC(uint8_t status, string msg)
+void printToC(uint8_t status, std::string msg)
 {
-    cout<<status<<msg<<endl;
+    std::cout << status<< msg << std::endl;
 }
 int main(void)
 {
-    std::string filename="/dev/spidev1.0";
-    MCU mcu(filename,PrintToC);
-    std::vector<unsigned char> data;
-    unsigned char value= 1;
-    data.push_back( value);
-    cout<<"Here works0";
-    mcu.SetStanby(1);
+    std::string filename = "/dev/spidev1.0";
+    MCU mcu(filename,printToC);
+    std::vector<uint8_t> data;
+    uint8_t value = 1;
+    data.push_back(value);
+    cout << "Here works";
+    mcu.setStanby(1);
     return 1;
 }
 #endif // QTAPP
