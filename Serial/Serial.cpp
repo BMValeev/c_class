@@ -14,7 +14,7 @@
 using namespace std;
 vector<std::string> Serial::paths;
 Serial::Serial(const char *pathname, speed_t speed,LogCallback cb){
-    int fd;
+    memset(&term, 0, sizeof(struct termios));
     std::string path(pathname);
     this->m_cb=cb;
     if(CheckFilename(path)){
@@ -26,7 +26,6 @@ Serial::Serial(const char *pathname, speed_t speed,LogCallback cb){
         throw;
     }
     fcntl(fd, F_SETFL, 0);
-    memset(&term, 0, sizeof(struct termios));
     if(SetSpeed(speed)){
         throw;
     }
@@ -40,9 +39,8 @@ Serial::Serial(const char *pathname, speed_t speed,LogCallback cb){
     if (tcsetattr(fd, TCSANOW, &term) < 0) {
         printf("Unable to set flags");
     }
-    timeout.tv_sec  = 5;
-    timeout.tv_usec = 0;
-
+    timeout.tv_sec  = 0;
+    timeout.tv_usec = 500;
 }
 void Serial::PrintLog(uint8_t status, std::string text) {
     if (this->m_cb!=0) {
