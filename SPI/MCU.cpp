@@ -14,159 +14,292 @@
 #include "SPI.h"
 #include "MCU.h"
 
-MCU::MCU(std::string filename, LogCallback cb) : m_cb(cb), m_filename(filename)
-{
-    SPI::getInstance().begin(m_filename,m_cb);
-}
-
-uint8_t MCU::setStanby(uint8_t status, int attempts)
+uint8_t MCU::setStanby(uint8_t status, int attempts) const
 {
     printLog(Info_log,static_cast<std::string>(__func__) + " started");
     return sendBool(SET_STANDBY, status, attempts);
 }
 
-uint8_t MCU::checkStatus(std::vector<uint8_t> &answer, int attempts)
+uint8_t MCU::checkStatus(std::vector<uint8_t> &answer, int attempts) const
 {
     printLog(Info_log,static_cast<std::string>(__func__) + " started");
-
-    std::vector<uint8_t> tx_msg;
-    uint8_t rx_len = getRxCnt(REQUEST_STATUS);
-    tx_msg.push_back(REQUEST_STATUS);
-
-    return send(tx_msg, answer, rx_len, attempts);
+    std::vector<uint8_t> payload;
+    return send(REQUEST_STATUS, payload, answer, attempts);
 }
 
-uint8_t MCU::setSubprogram(uint8_t subprogramCut, uint8_t subprogramCoag, int attempts)
+uint8_t MCU::setConnector(uint8_t cutConnector, uint8_t coagConnector, int attempts) const
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    return send2Uint8(SET_CONNECTOR, cutConnector, coagConnector, attempts);
+}
+
+uint8_t MCU::setSubprogram(uint8_t subprogramCut, uint8_t subprogramCoag, int attempts) const
 {
     printLog(Info_log,static_cast<std::string>(__func__) + " started");
     return send2Uint8(SET_SUBPROGRAM, subprogramCut, subprogramCoag, attempts);
 }
 
-uint8_t MCU::setConnector(uint8_t connector, int attempts)
-{
-    printLog(Info_log,static_cast<std::string>(__func__) + " started");
-    return send1Uint8(SET_CONNECTOR, connector, attempts);
-}
-
-uint8_t MCU::setMaxVoltage(uint16_t cutVoltage, uint16_t coagVoltage, int attempts)
-{
-    printLog(Info_log,static_cast<std::string>(__func__) + " started");
-    return send2Uint16(SET_MAX_U, cutVoltage, coagVoltage, attempts);
-}
-
-uint8_t MCU::setPower(uint16_t cutPower, uint16_t coagPower, int attempts)
-{
-    printLog(Info_log,static_cast<std::string>(__func__) + " started");
-    return send2Uint16(SET_POWER, cutPower, coagPower, attempts);
-}
-
-uint8_t MCU::setMaxTime(uint8_t maxTime , int attempts)
+uint8_t MCU::setMaxActTime(uint8_t maxTime , int attempts) const
 {
     printLog(Info_log,static_cast<std::string>(__func__) + " started");
     return send1Uint8(SET_MAX_ACT_TIME, maxTime, attempts);
 }
 
-uint8_t MCU::setAutoStartDelay(uint8_t delayTime , int attempts)
-{
-    printLog(Info_log,static_cast<std::string>(__func__) + " started");
-    return send1Uint8(SET_AUTOSTART_DELAY, delayTime, attempts);
-}
-
-uint8_t MCU::setAutoStopResistance(uint16_t resistance , int attempts)
-{
-    printLog(Info_log,static_cast<std::string>(__func__) + " started");
-    return send1Uint16(SET_AUTOSTOP_THRESHOLD, resistance, attempts);
-}
-
-uint8_t MCU::setIrrigation(uint8_t enabled , int attempts)
+uint8_t MCU::setIrrigation(uint8_t enabled , int attempts) const
 {
     printLog(Info_log,static_cast<std::string>(__func__) + " started");
     return sendBool(SET_IRRIGATION, enabled, attempts);
 }
 
-uint8_t MCU::setIrrigationDelay(uint8_t delay , int attempts)
+uint8_t MCU::setIrrigationDelay(uint8_t delay , int attempts) const
 {
     printLog(Info_log,static_cast<std::string>(__func__) + " started");
     return send1Uint8(SET_IRRIGATION_DELAY, delay, attempts);
 }
 
-uint8_t MCU::setModFrequency(uint16_t frequencyCut, uint16_t frequencyCoag, int attempts)
+uint8_t MCU::setMainLoopDelay(uint16_t delay_us, int attempts) const
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    return send1Uint16(SET_MAIN_LOOP_DELAY, delay_us, attempts);
+}
+
+uint8_t MCU::writeCallibrCharacteristic(uint8_t connector,
+                                        uint8_t circuit,
+                                        uint8_t voltage,
+                                        std::vector<uint16_t>& callibrData,
+                                        int attempts) const
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+
+    // Payload also contains connector, circuit, voltage and 2 bytes CRC16
+    uint16_t payloadLen = static_cast<uint8_t>(callibrData.size()*2 + 5);
+    std::vector<uint8_t> payload, answer;
+    payload.reserve(payloadLen);
+    // Fill in the payload
+    payload.push_back(connector);
+    payload.push_back(circuit);
+    payload.push_back(voltage);
+    serializeUint16toUint8(callibrData, payload);
+    uint16_t crc16 = CRC::crc16(payload.data(),payloadLen - 2);
+    payload.push_back((crc16 & 0xFF));        // Extract the LSB
+    payload.push_back((crc16 & 0xFF00) >> 8); // Extract the MSB
+    payload.resize(payloadLen,0); // padding with 0s
+
+    return send(WRITE_CALLIBR_CHARACT, payload, answer, attempts);
+}
+
+uint8_t MCU::setPower(uint16_t cutPower, uint16_t coagPower, int attempts) const
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    return send2Uint16(SET_POWER, cutPower, coagPower, attempts);
+}
+
+uint8_t MCU::setMaxVoltage(uint16_t cutVoltage, uint16_t coagVoltage, int attempts) const
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    return send2Uint16(SET_MAX_U, cutVoltage, coagVoltage, attempts);
+}
+
+uint8_t MCU::setAutoStartDelay(uint8_t delayTime , int attempts) const
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    return send1Uint8(SET_AUTOSTART_DELAY, delayTime, attempts);
+}
+
+uint8_t MCU::setAutoStopResistance(uint16_t resistance , int attempts) const
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    return send1Uint16(SET_AUTOSTOP_THRESHOLD, resistance, attempts);
+}
+
+uint8_t MCU::setModFrequency(uint16_t frequencyCut, uint16_t frequencyCoag, int attempts) const
 {
     printLog(Info_log,static_cast<std::string>(__func__) + " started");
     return send2Uint16(SET_MOD_DUTY_CYCLE, frequencyCut, frequencyCoag, attempts);
 }
 
-uint8_t MCU::setModDutyCycle(uint8_t dutyCycleCut , uint8_t dutyCycleCoag, int attempts)
+uint8_t MCU::setModDutyCycle(uint8_t dutyCycleCut , uint8_t dutyCycleCoag, int attempts) const
 {
     printLog(Info_log,static_cast<std::string>(__func__) + " started");
     return send2Uint8(SET_MOD_DUTY_CYCLE, dutyCycleCut, dutyCycleCoag, attempts);
 }
 
-uint8_t MCU::setCircuit(uint8_t circuitCut, uint8_t circuitCoag, int attempts)
+uint8_t MCU::setCircuit(uint8_t circuitCut, uint8_t circuitCoag, int attempts) const
 {
     printLog(Info_log,static_cast<std::string>(__func__) + " started");
     return send2Uint8(SET_CIRCUIT, circuitCut, circuitCoag, attempts);
 }
 
-uint8_t MCU::renewAll(uint8_t connector, uint8_t routineCut, uint8_t routineCoag, uint16_t maxVoltageCut,
-                      uint16_t maxVoltageCoag, uint16_t powerCut, uint16_t powerCoag, uint8_t maxTime,
-                      uint8_t autostart, uint8_t autostartDelay, uint8_t autostop, uint16_t autostopResistance,
-                      uint8_t irrigation, uint8_t irrigationDelay, uint16_t cutPWMFrequency,
-                      uint16_t coagPWMFrequency, uint8_t dutyCycleCut, uint8_t dutyCycleCoag,
-                      uint8_t filterCut, uint8_t filterCoag, uint8_t cutPedal, uint8_t coagPedal, int attempts)
+uint8_t MCU::setADCBufferSize(uint16_t cutBufferSize, uint16_t coagBufferSize, int attempts) const
 {
     printLog(Info_log,static_cast<std::string>(__func__) + " started");
-    std::vector<uint8_t> tx_msg, answer;
-    uint8_t rx_len = getRxCnt(SET_ALL);
-    // Fill the buffer
-    tx_msg.push_back(SET_ALL); // command code
-    tx_msg.push_back(connector);
-    tx_msg.push_back(routineCut);
-    tx_msg.push_back(routineCoag);
-    tx_msg.push_back(maxVoltageCut & 0xFF); // lsb
-    tx_msg.push_back(maxVoltageCut >> 8); // msb
-    tx_msg.push_back(maxVoltageCoag & 0xFF);
-    tx_msg.push_back(maxVoltageCoag >> 8);
-    tx_msg.push_back(powerCut & 0xFF);
-    tx_msg.push_back(powerCut >> 8);
-    tx_msg.push_back(powerCoag & 0xFF);
-    tx_msg.push_back(powerCoag >> 8);
-    tx_msg.push_back(maxTime);
-    tx_msg.push_back(autostart);
-    tx_msg.push_back(autostartDelay);
-    tx_msg.push_back(autostop);
-    tx_msg.push_back(autostopResistance & 0xFF);
-    tx_msg.push_back(autostopResistance >> 8);
-    tx_msg.push_back(irrigation);
-    tx_msg.push_back(irrigationDelay);
-    tx_msg.push_back(cutPWMFrequency & 0xFF);
-    tx_msg.push_back(cutPWMFrequency >> 8);
-    tx_msg.push_back(coagPWMFrequency & 0xFF);
-    tx_msg.push_back(coagPWMFrequency >> 8);
-    tx_msg.push_back(dutyCycleCut);
-    tx_msg.push_back(dutyCycleCoag);
-    tx_msg.push_back(filterCut);
-    tx_msg.push_back(filterCoag);
-    tx_msg.push_back(cutPedal);
-    tx_msg.push_back(coagPedal);
-
-    return send(tx_msg, answer, rx_len, attempts);
+    return send2Uint16(SET_ADC_BUFFER_SIZE, cutBufferSize, coagBufferSize, attempts);
 }
 
-void MCU::printLog(uint8_t status, std::string text)
+uint8_t MCU::setLoadCharacteristic(bool isCut, std::vector<uint16_t> &loadCharData, int attempts) const
 {
-    if (m_cb != nullptr)
-    {
-        m_cb(status,text);
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+
+    // Payload also contains connector, circuit, voltage and 2 bytes CRC16
+    uint16_t payloadLen = static_cast<uint8_t>(loadCharData.size()*2 + 3);
+    std::vector<uint8_t> payload, answer;
+    payload.reserve(payloadLen);
+    // Fill in the payload
+    payload.push_back(isCut);
+    serializeUint16toUint8(loadCharData, payload);
+    uint16_t crc16 = CRC::crc16(payload.data(),payloadLen - 2);
+    payload.push_back((crc16 & 0xFF));        // Extract the LSB
+    payload.push_back((crc16 & 0xFF00) >> 8); // Extract the MSB
+    payload.resize(payloadLen,0); // padding with 0s
+
+    return send(SET_LOAD_CHARACT, payload, answer, attempts);
+}
+
+uint8_t MCU::setStartVoltageLevel(uint8_t cutLevel, uint8_t coagLevel, int attempts) const
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    return send2Uint8(SET_START_VOLTAGE_LEVEL, cutLevel, coagLevel, attempts);
+}
+
+uint8_t MCU::setWorkVoltageLevel(uint8_t cutLevel, uint8_t coagLevel, int attempts) const
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    return send2Uint8(SET_WORK_VOLTAGE_LEVEL, cutLevel, coagLevel, attempts);
+}
+
+uint8_t MCU::setMaxCurrent(uint16_t cutCurrent, uint16_t coagCurrent, int attempts) const
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    return send2Uint16(SET_MAX_CURRENT, cutCurrent, coagCurrent, attempts);
+}
+
+uint8_t MCU::setWorkCurrent(uint16_t cutCurrent, uint16_t coagCurrent, int attempts) const
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    return send2Uint16(SET_WORK_CURRENT, cutCurrent, coagCurrent, attempts);
+}
+
+uint8_t MCU::setIrrigationCurrent(uint16_t cutCurrent, uint16_t coagCurrent, int attempts) const
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    return send2Uint16(SET_IRRIGATION_CURRENT, cutCurrent, coagCurrent, attempts);
+}
+
+uint8_t MCU::setMaxAttempts(uint8_t cutAttempts, uint8_t coagAttempts, int attempts) const
+{
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    return send2Uint8(SET_MAX_PLAZMA_ATTEMPTS, cutAttempts, coagAttempts, attempts);
+}
+
+uint8_t MCU::renewAll(std::vector<uint8_t>& payload, int attempts) const
+{
+    if (payload.size() != 49) {
+        printLog(Info_log,static_cast<std::string>(__func__) + " wrong payload size");
+        return NOK_SPI;
     }
+
+    std::vector<uint8_t> answer;
+    return send(SET_ALL, payload, answer, attempts);
 }
 
-void MCU::printToCout(uint8_t status, std::string msg)
+uint8_t MCU::renewAll(uint8_t cutConnector,
+                      uint8_t coagConnector,
+                      uint8_t cutSubprogram,
+                      uint8_t coagSubprogram,
+                      uint8_t maxActTime,
+                      bool irrigation,
+                      uint8_t irrigationDelay,
+                      uint16_t mainLoopDelay,
+                      uint16_t cutPower,
+                      uint16_t coagPower,
+                      uint16_t cutMaxVoltage,
+                      uint16_t coagMaxVoltage,
+                      uint8_t autostartDelay,
+                      uint16_t autostopResistance,
+                      uint16_t cutPWMFrequency,
+                      uint16_t coagPWMFrequency,
+                      uint8_t cutDutyCycle,
+                      uint8_t coagDutyCycle,
+                      uint8_t cutCircuit,
+                      uint8_t coagCircuit,
+                      uint16_t cutAdcBufferSize,
+                      uint16_t coagAdcBufferSize,
+                      uint8_t cutPlazmaStartLevel,
+                      uint8_t coagPlazmaStartLevel,
+                      uint8_t cutPlazmaWorkLevel,
+                      uint8_t coagPlazmaWorkLevel,
+                      uint16_t cutPlazmaMaxCurrent,
+                      uint16_t coagPlazmaMaxCurrent,
+                      uint16_t cutPlazmaWorkCurrent,
+                      uint16_t coagPlazmaWorkCurrent,
+                      uint8_t cutPlazmaAttempts,
+                      uint8_t coagPlazmaAttempts,
+                      uint16_t cutPlazmaIrrigCurrent,
+                      uint16_t coagPlazmaIrrigCurrent,
+                      int attempts) const
 {
-    std::cout << status << msg << std::endl;
+    printLog(Info_log,static_cast<std::string>(__func__) + " started");
+    std::vector<uint8_t> payload;
+    payload.reserve(49);
+    // Fill in the payload
+    // Common
+    payload.push_back(maxActTime);
+    payload.push_back(irrigation);
+    payload.push_back(irrigationDelay);
+    payload.push_back(mainLoopDelay & 0xFF);
+    payload.push_back(mainLoopDelay >> 8);
+    // Cut
+    payload.push_back(cutConnector);
+    payload.push_back(cutSubprogram);
+    payload.push_back(cutPower & 0xFF);
+    payload.push_back(cutPower >> 8);
+    payload.push_back(cutMaxVoltage & 0xFF);
+    payload.push_back(cutMaxVoltage >> 8);
+    payload.push_back(cutPWMFrequency & 0xFF);
+    payload.push_back(cutPWMFrequency >> 8);
+    payload.push_back(cutDutyCycle);
+    payload.push_back(cutCircuit);
+    payload.push_back(cutAdcBufferSize & 0xFF);
+    payload.push_back(cutAdcBufferSize >> 8);
+    payload.push_back(cutPlazmaStartLevel);
+    payload.push_back(cutPlazmaWorkLevel);
+    payload.push_back(cutPlazmaMaxCurrent & 0xFF);
+    payload.push_back(cutPlazmaMaxCurrent >> 8);
+    payload.push_back(cutPlazmaWorkCurrent & 0xFF);
+    payload.push_back(cutPlazmaWorkCurrent >> 8);
+    payload.push_back(cutPlazmaAttempts);
+    payload.push_back(cutPlazmaIrrigCurrent & 0xFF);
+    payload.push_back(cutPlazmaIrrigCurrent >> 8);
+    // Coag
+    payload.push_back(coagConnector);
+    payload.push_back(coagSubprogram);
+    payload.push_back(coagPower & 0xFF);
+    payload.push_back(coagPower >> 8);
+    payload.push_back(coagMaxVoltage & 0xFF);
+    payload.push_back(coagMaxVoltage >> 8);
+    payload.push_back(coagPWMFrequency & 0xFF);
+    payload.push_back(coagPWMFrequency >> 8);
+    payload.push_back(coagDutyCycle);
+    payload.push_back(coagCircuit);
+    payload.push_back(coagAdcBufferSize & 0xFF);
+    payload.push_back(coagAdcBufferSize >> 8);
+    payload.push_back(coagPlazmaStartLevel);
+    payload.push_back(coagPlazmaWorkLevel);
+    payload.push_back(coagPlazmaMaxCurrent & 0xFF);
+    payload.push_back(coagPlazmaMaxCurrent >> 8);
+    payload.push_back(coagPlazmaWorkCurrent & 0xFF);
+    payload.push_back(coagPlazmaWorkCurrent >> 8);
+    payload.push_back(coagPlazmaAttempts);
+    payload.push_back(coagPlazmaIrrigCurrent & 0xFF);
+    payload.push_back(coagPlazmaIrrigCurrent >> 8);
+    payload.push_back(autostartDelay);
+    payload.push_back(autostopResistance & 0xFF);
+    payload.push_back(autostopResistance >> 8);
+
+    return renewAll(payload,attempts);
 }
 
-uint8_t MCU::getRxCnt(uint8_t cmd)
+uint8_t MCU::getRxCnt(uint8_t cmd) const
 {
     if (cmd == REQUEST_STATUS)
         return 5;
@@ -174,120 +307,12 @@ uint8_t MCU::getRxCnt(uint8_t cmd)
     return 3;
 }
 
-uint8_t MCU::sendBool(uint8_t command, bool value, int attempts)
-{
-    //PrintLog(Debug_log,
-    //         static_cast<std::string>(__func__) + " started");
-    std::vector<uint8_t> tx_msg, answer;
-    uint8_t rx_len = getRxCnt(command);
-
-    tx_msg.push_back(command);
-    tx_msg.push_back(value? 0x01 : 0x00);
-
-    return send(tx_msg, answer, rx_len, attempts);
-}
-
-uint8_t MCU::send1Uint16(uint8_t command, uint16_t value, int attempts)
-{   
-    //PrintLog(Debug_log,
-    //         static_cast<std::string>(__func__) + " started");
-    std::vector<uint8_t> tx_msg, answer;
-    uint8_t rx_len = getRxCnt(command);
-
-    tx_msg.push_back(command);
-    tx_msg.push_back(value  & 0xff);
-    tx_msg.push_back(value >> 8);
-
-    return send(tx_msg, answer, rx_len, attempts);
-}
-
-uint8_t MCU::send1Uint8(uint8_t command, uint8_t value, int attempts)
-{
-    //PrintLog(Debug_log,
-    //         static_cast<std::string>(__func__) + " started");
-    std::vector<uint8_t> tx_msg, answer;
-    uint8_t rx_len = getRxCnt(command);
-
-    tx_msg.push_back(command);
-    tx_msg.push_back(value);
-
-    return send(tx_msg, answer, rx_len, attempts);
-}
-
-uint8_t MCU::send2Uint8(uint8_t command, uint8_t value1, uint8_t value2, int attempts)
-{
-    //PrintLog(Debug_log,
-    //         static_cast<std::string>(__func__) + " started");
-    std::vector<uint8_t> tx_msg, answer;
-    uint8_t rx_len = getRxCnt(command);
-
-    tx_msg.push_back(command);
-    tx_msg.push_back(value1);
-    tx_msg.push_back(value2);
-
-    return send(tx_msg, answer, rx_len, attempts);
-}
-
-uint8_t MCU::send2Uint16(uint8_t command, uint16_t value1, uint16_t value2, int attempts)
-{
-    //PrintLog(Debug_log,
-    //         static_cast<std::string>(__func__) + " started");
-    std::vector<uint8_t> tx_msg, answer;
-    uint8_t rx_len = getRxCnt(command);
-
-    tx_msg.push_back(command);
-    tx_msg.push_back(value1  & 0xff);
-    tx_msg.push_back(value1 >> 8);
-    tx_msg.push_back(value2  & 0xff);
-    tx_msg.push_back(value2 >> 8);
-
-    return send(tx_msg, answer, rx_len, attempts);
-}
-
-uint8_t MCU::send(std::vector<uint8_t> &tx_msg, std::vector<uint8_t> &rx_msg, uint8_t rx_len, int attempts)
-{
-    SPI& spi = SPI::getInstance();
-
-    while(attempts--)
-    {
-        printLog(Debug_log,
-                 static_cast<std::string>(__func__) + "Transactions left: " + std::to_string(attempts));
-
-        // Send message
-        if (spi.transaction(tx_msg,rx_len))
-            continue;
-
-        rx_msg = spi.recData();
-
-        if (rx_msg.size() != rx_len-1)
-            continue;
-
-        rx_msg.erase(rx_msg.begin());
-
-        if (rx_msg.front() != (ACK_SPI|EXEC_SPI))
-        {
-            if (attempts == 0)
-            {
-                if ( (rx_msg.front() & ACK_SPI) != ACK_SPI )
-                {
-                    return NACK; // not acknowledged
-                }
-                else
-                {
-                    return NOK_SPI; // not executed
-                }
-            } else {
-                continue;
-            }
-        }
-
-        // Acknowledged & executed
-        rx_msg.erase(rx_msg.begin()); // Remove acknowledge byte
-        printLog(Debug_log,
-                 static_cast<std::string>(__func__) + " - success");
-        return OK_SPI;
+void MCU::serializeUint16toUint8(const std::vector<uint16_t> &input, std::vector<uint8_t> &output) {
+    // Little endian
+    for(auto snumber : input) {
+        output.push_back((snumber & 0xFF));        // Extract the LSB
+        output.push_back((snumber & 0xFF00) >> 8); // Extract the MSB
     }
-    return TR_ERR_SPI;
 }
 
 #ifdef C_CLASS_DEBUG
@@ -307,4 +332,4 @@ int main(void)
     mcu.setStanby(1);
     return 1;
 }
-#endif // QTAPP
+#endif // C_CLASS_DEBUG

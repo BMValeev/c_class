@@ -1,7 +1,8 @@
 /*
  *Created by eleps on 27.04.18.
 */
-using namespace std;
+#include "SPI.h"
+
 #include <unistd.h>
 #include <stdint.h>
 #include <fcntl.h>
@@ -10,254 +11,184 @@ using namespace std;
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <cassert>
+
 #include "../Rest/crc.h"
-#include "SPI.h"
-
-
 
 // SPI class
-SPI* SPI::theOneTrueInstance;
+SPI* SPI::theOneTrueInstance = nullptr;
 
 // Construction and destruction
-SPI & SPI::getInstance() {
-    if (!theOneTrueInstance) initInstance();
+SPI& SPI::getInstance()
+{
+    if (theOneTrueInstance == nullptr) {
+        // Allocate on heap so that it does not get destroyed after
+        theOneTrueInstance = new SPI();
+    }
+
     return *theOneTrueInstance;
 }
-void SPI::initInstance() {
-    new SPI;
-}
-SPI::SPI() {
-    if (theOneTrueInstance) throw std::logic_error("Instance already exists");
+
+SPI::SPI() : mCb(SPI::printToCout), mHardwareInitialized(false), mInit(false)
+{
+    if (theOneTrueInstance != nullptr)
+        throw std::logic_error("Instance already exists");
+
     theOneTrueInstance = this;
 }
-SPI::~SPI() {
 
-}
+uint8_t SPI::begin(std::string device, LogCallback cb)/*Need to check*/
+{
+    // Lock the mutex first
+    std::lock_guard<std::mutex> lock(mMutex); // automatically unlocks when function is leaved, no need to call unlock
 
-uint8_t SPI::begin(std::string device,LogCallback cb)/*Need to check*/
-{
-    this->m_cb=cb;
-    PrintLog(Debug_log,(std::string) __func__+  (std::string)" Function started");
-    this->Mutex.lock();
-    CleanRecMsg();
-    SetDeviceName(device);
-    int statusVal = -1;
-    this->mode = SPI_MODE_0 ;
-    this->bitsPerWord = 8;
-    this->speed = 1000000;
-    this->spifd = -1;
-    this->spifd = open(this->DeviceName.c_str(), O_RDWR);
-    if(this->spifd < 0){
-        PrintLog(Critical_log, "could not open SPI device");
-        this->status=0;
-        this->Mutex.unlock();
+    setLogCallback(cb);
+    printLog(Debug_log, static_cast<std::string>(__func__) + " started");
+
+    // Setups
+    mLastRecMsg.reserve(SPI_RX_BUFFER_SIZE); // will always have fixed size
+    setDeviceName(device);
+
+    // Initialization
+    mHardwareInitialized = false;
+    mMode = SPI_MODE;
+    mBitsPerWord = SPI_BITS_PER_WORD;
+    mSpeed = SPI_SPEED_HZ;
+
+    mSpifd = -1;
+    mSpifd = open(mDeviceName.c_str(), O_RDWR);
+    if(mSpifd < 0){
+        printLog(Critical_log, static_cast<std::string>(__func__) + " could not open SPI device");
         return NOK_SPI;
     }
-    statusVal = ioctl (this->spifd, SPI_IOC_WR_MODE, &(this->mode));
-    if(statusVal < 0){
-        PrintLog(Critical_log,(std::string) __func__+  (std::string)" Could not set SPIMode (WR)...ioctl fail");
-        this->status=0;
-        this->Mutex.unlock();
+
+    int result = -1;
+    result = ioctl(mSpifd, SPI_IOC_WR_MODE, &mMode);
+    if(result < 0){
+        printLog(Critical_log,static_cast<std::string>(__func__) + " could not set SPIMode (WR)...ioctl fail");
         return NOK_SPI;
     }
-    statusVal = ioctl (this->spifd, SPI_IOC_RD_MODE, &(this->mode));
-    if(statusVal < 0) {
-        PrintLog(Critical_log, (std::string) __func__+  (std::string)"Could not set SPIMode (RD)...ioctl fail");
-        this->status=0;
-        this->Mutex.unlock();
+
+    result = -1;
+    result = ioctl(mSpifd, SPI_IOC_RD_MODE, &mMode);
+    if(result < 0) {
+        printLog(Critical_log, static_cast<std::string>(__func__) + " could not set SPIMode (RD)...ioctl fail");
         return NOK_SPI;
     }
-    statusVal = ioctl (this->spifd, SPI_IOC_WR_BITS_PER_WORD, &(this->bitsPerWord));
-    if(statusVal < 0) {
-        PrintLog(Critical_log,(std::string) __func__+  (std::string)"Could not set SPI bitsPerWord (WR)...ioctl fail");
-        this->status=0;
-        this->Mutex.unlock();
+
+    result = -1;
+    result = ioctl(mSpifd, SPI_IOC_WR_BITS_PER_WORD, &mBitsPerWord);
+    if(result < 0) {
+        printLog(Critical_log,static_cast<std::string>(__func__) + " could not set SPI bitsPerWord (WR)...ioctl fail");
         return NOK_SPI;
     }
-    statusVal = ioctl (this->spifd, SPI_IOC_RD_BITS_PER_WORD, &(this->bitsPerWord));
-    if(statusVal < 0) {
-        PrintLog(Critical_log,(std::string) __func__+  (std::string)"Could not set SPI bitsPerWord(RD)...ioctl fail");
-        this->status=0;
-        this->Mutex.unlock();
+
+    result = -1;
+    result = ioctl(mSpifd, SPI_IOC_RD_BITS_PER_WORD, &mBitsPerWord);
+    if(result < 0) {
+        printLog(Critical_log,static_cast<std::string>(__func__) + " could not set SPI bitsPerWord(RD)...ioctl fail");
         return NOK_SPI;
     }
-    statusVal = ioctl (this->spifd, SPI_IOC_WR_MAX_SPEED_HZ, &(this->speed));
-    if(statusVal < 0) {
-        PrintLog(Critical_log,(std::string) __func__+  (std::string)"Could not set SPI speed (WR)...ioctl fail");
-        this->status=0;
-        this->Mutex.unlock();
+
+    result = -1;
+    result = ioctl(mSpifd, SPI_IOC_WR_MAX_SPEED_HZ, &mSpeed);
+    if(result < 0) {
+        printLog(Critical_log,static_cast<std::string>(__func__) + " could not set SPI speed (WR)...ioctl fail");
         return NOK_SPI;
     }
-    statusVal = ioctl (this->spifd, SPI_IOC_RD_MAX_SPEED_HZ, &(this->speed));
-    if(statusVal < 0) {
-        PrintLog(Critical_log, (std::string) __func__+  (std::string)"Could not set SPI speed (RD)...ioctl fail ");
-        this->status=0;
-        this->Mutex.unlock();
+
+    result = -1;
+    result = ioctl(mSpifd, SPI_IOC_RD_MAX_SPEED_HZ, &mSpeed);
+    if(result < 0) {
+        printLog(Critical_log, static_cast<std::string>(__func__) + " could not set SPI speed (RD)...ioctl fail ");
         return NOK_SPI;
     }
-    this->status=1;
-    this->init=1;
-    this->Mutex.unlock();
-    PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully");
-    return 0;
-}
-uint8_t SPI::transaction(std::vector<unsigned char> buffer, uint8_t ans_len) /*Need to check*/
-{
-    PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started");
-    //unsigned int status=0;
-    this->Mutex.lock();
-    if (SendPacket(buffer,ans_len))
-    {
-        this->Mutex.unlock();
-        PrintLog(Warning_log,(std::string) __func__+  (std::string)": Packet not send");
-        return NOK_SPI;
-    }
-    // Compute CRC over all message including CRC itself - should equal 0
-    if(CRC::crc8(this->LastRecMsg.data(),this->LastRecMsg.size()))
-    {
-        this->Mutex.unlock();
-        PrintLog(Warning_log,(std::string) __func__+  (std::string)": CRC error");
-        return NOK_SPI;
-    }
-    this->LastRecMsg.pop_back();
-    PrintLog(Debug_log,(std::string) __func__+  (std::string)": Function ended succesfully");
-    this->Mutex.unlock();
+
+    // The SPI is launched correctly
+    mHardwareInitialized = true;
+    mInit = true;
+
+    printLog(Debug_log, static_cast<std::string>(__func__)+ " ended succesfully");
+
     return OK_SPI;
 }
-std::vector<unsigned char> SPI::recData(void) /*Need to check*/
-{
-    //PrintLog(Debug_log,(std::string) __func__+  (std::string)": Function started");
-    this->NewData=0;
-    //PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully");
-    return LastRecMsg;
 
-}
-/*Unsafe methods*/
-int SPI::SendRaw_new(unsigned char *buffer, unsigned int len, uint8_t ans_len) //original
+uint8_t SPI::transaction(std::vector<uint8_t>& buffer, uint8_t ansLen) /*Need to check*/
 {
-    int retVal = 0;
-    PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started");
-    unsigned char receive[len];
-    unsigned char test[4]={0x05,0x33,0x00,0x00};
-    unsigned char test1[2]={0x03,0x33};
-    if (this->status==0)
-    {
-        if (ans_len==3)
-        {
-            PrintLog(Debug_log,(std::string) __func__+  (std::string)"Test branch");
-            CleanRecMsg();
-            this->LastRecMsg.push_back(0x03);
-            this->LastRecMsg.push_back(0x33);
-            this->LastRecMsg.push_back(CRC::crc8(test1,2));
-            return OK_SPI;
-        } else
-        {
-            PrintLog(Debug_log,(std::string) __func__+  (std::string)"Test branch");
-            CleanRecMsg();
-            this->LastRecMsg.push_back(0x05);
-            this->LastRecMsg.push_back(0x33);
-            this->LastRecMsg.push_back(0x00);
-            this->LastRecMsg.push_back(0x00);
-            this->LastRecMsg.push_back(CRC::crc8(test,4));
-            return OK_SPI;
-        }
-    }
-    PrintLog(Debug_log,(std::string) __func__+  std::to_string(len));
+    // Lock the mutex first
+    std::lock_guard<std::mutex> lock(mMutex); // automatically unlocks when function is leaved, no need to call unlock
+
+    printLog(Debug_log, static_cast<std::string>(__func__) + " started");
+    printLog(Debug_log, static_cast<std::string>(__func__) + std::to_string(buffer.size()));
+
+    // uint8_t receive[ansLen];
+    resetRecData();
     spi_ioc_transfer send[2];
-    send[0].tx_buf = (unsigned long)buffer;
-    send[0].rx_buf = (unsigned long)NULL;
-    send[0].len = len;
-    send[0].delay_usecs = 3000;
-    send[0].speed_hz = this->speed;
-    send[0].bits_per_word = this->bitsPerWord;
-    send[0].tx_nbits=0;
-    send[0].rx_nbits=0;
-    send[0].pad=0;
+    // Tx config
+    send[0].tx_buf = reinterpret_cast<unsigned long>(buffer.data());
+    send[0].rx_buf = reinterpret_cast<unsigned long>(nullptr);
+    send[0].len = buffer.size();
+    send[0].delay_usecs = SPI_TX_RX_PAUSE_US;
+    send[0].speed_hz = mSpeed;
+    send[0].bits_per_word = mBitsPerWord;
+    send[0].tx_nbits = 0;
+    send[0].rx_nbits = 0;
+    send[0].pad = 0;
     send[0].cs_change = 0;
-    send[1].tx_buf = (unsigned long)NULL;
-    send[1].rx_buf = (unsigned long)receive;
-    //send[1].len = ans_len;
-    send[1].len = len;
+    // Rx config
+    send[1].tx_buf = reinterpret_cast<unsigned long>(nullptr);
+    // send[1].rx_buf = (unsigned long)receive;
+    send[1].rx_buf = reinterpret_cast<unsigned long>(mLastRecMsg.data());
+    send[1].len = ansLen;
     send[1].delay_usecs = 0;
-    send[1].speed_hz = this->speed;
-    send[1].bits_per_word = this->bitsPerWord;
-    send[1].tx_nbits=0;
-    send[1].rx_nbits=0;
-    send[1].pad=0;
+    send[1].speed_hz = mSpeed;
+    send[1].bits_per_word = mBitsPerWord;
+    send[1].tx_nbits = 0;
+    send[1].rx_nbits = 0;
+    send[1].pad = 0;
     send[1].cs_change = 0;
-    retVal= ioctl (spifd, SPI_IOC_MESSAGE(2), &send);
-    if(retVal < 0)
+
+    // Perform communication
+    int result = -1;
+    result = ioctl(mSpifd, SPI_IOC_MESSAGE(2), &send);
+    if(result < 0)
     {
-        PrintLog(Warning_log,(std::string) __func__+ (std::string)strerror(errno)  +(std::string)"Error during transmission" );
+        printLog(Warning_log, static_cast<std::string>(__func__) + static_cast<std::string>(strerror(errno)) + " error ocurred during transmission" );
         return NOK_SPI;
     }
-    CleanRecMsg();
-    for (retVal = 0; retVal < (ans_len); retVal++)
+
+    // ToDo: maybe it is possible to just pass pointer mLastRecMsg.data() to structure above, to avoid copying
+    /* resetRecData();
+    for (int i = 0; i < ansLen; i++)
     {
-        this->LastRecMsg.push_back(receive[retVal]);
-    }
-    PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully");
+        mLastRecMsg[i] = receive[i];
+    }*/
+
+    printLog(Debug_log, static_cast<std::string>(__func__) + " ended succesfully");
     return OK_SPI;
 }
-void SPI::SetDeviceName(std::string Name)
+
+/* Used for configuration of the device in construction */
+void SPI::setDeviceName(std::string name)
 {
-    /*
-             * Used for configuration of the device in construction
-             */
-    PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started");
-    this->DeviceName=Name;    
-    PrintLog(Info_log, "Function name - " + DeviceName + "");
-    PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully");
-}
-void SPI::CleanRecMsg(void)
-{
-    /*
-             * Explicitly cleans last read buffer
-             */
-    //PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started");
-    this->LastRecMsg.clear();
-    //PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully");
-}
-/*Safe methods*/
-void SPI::PrintLog(uint8_t status, std::string text)
-{
-    if (this->m_cb!=0)
-    {
-        m_cb(status,text);
-    }
+    if (mDeviceName == name)
+        return;
+
+    mDeviceName = name;
+    printLog(Info_log, "SPI --> new device name set - " + mDeviceName);
 }
 
-void SPI::PrintToCout(uint8_t status, string msg)
+/* Safe methods */
+void SPI::printLog(uint8_t status, std::string text)
 {
-        cout<<status<<msg<<endl;
+    if (mCb == nullptr)
+        return;
+
+    mCb(status, text);
 }
 
-int SPI::SendPacket(std::vector<unsigned char> Buffer, uint8_t ans_len)
+void SPI::printToCout(uint8_t status, std::string msg)
 {
-    //PrintLog(Debug_log,(std::string) __func__+  (std::string)"Function started");
-    unsigned int FullLen;
-    unsigned int i=0;
-    unsigned char *temp;
-    //unsigned char Result[Buffer.size()+2];
-    unsigned char Result[PACKED_LENGTH_SPI];
-    FullLen=Buffer.size()+2;
-    temp=Buffer.data();
-    Result[0]=FullLen;
-    for(i=1;i<Buffer.size()+1;i++)
-    {
-        Result[i]=temp[i-1];
-    }
-    Result[i++]=CRC::crc8(Result,FullLen-1);
-    // Fill rest of the buffer with zeros
-    for(; i<PACKED_LENGTH_SPI; i++) {
-        Result[i] = 0;
-    }
-    if(SendRaw_new(Result, PACKED_LENGTH_SPI, ans_len))
-    {
-        PrintLog(Info_log,(std::string) __func__+  (std::string)"Transmisison error");
-        return NOK_SPI;
-    }
-    //PrintLog(Debug_log, (std::string) __func__+  (std::string)"Function ended succesfully");
-    return OK_SPI;
+    std::cout << status << msg << std::endl;
 }
 

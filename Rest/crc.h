@@ -4,7 +4,8 @@
 class CRC
 {
 public:
-    static unsigned char crc8(unsigned char *buffer, unsigned int len);
+    static unsigned char crc8(unsigned char *buffer, unsigned long len);
+    static unsigned short crc16(unsigned char *buffer, unsigned long len);
     static bool crcBool(unsigned char *buffer, unsigned int len);
 };
 
