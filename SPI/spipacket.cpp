@@ -106,7 +106,7 @@ uint8_t SPIPacket::send(uint8_t cmd, std::vector<uint8_t> &payload, std::vector<
 {
 #ifdef DEBUG
     // This is debug branch, works only if SPI was not properly initialized
-    if (!SPI::getInstance().isInitialized())
+    if (!SPI::getInstance().isHardwareInitialized())
     {
         printLog(Debug_log, static_cast<std::string>(__func__) + " debug branch answer");
         answer.clear();

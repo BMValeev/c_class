@@ -51,6 +51,7 @@ public:
     void resetRecData() { std::fill(mLastRecMsg.begin(), mLastRecMsg.end(), 0); }
     void setLogCallback(LogCallback cb) { mCb = cb; }
     bool isInitialized() const { return theOneTrueInstance != nullptr; }
+    bool isHardwareInitialized() const { return mHardwareInitialized; }
 
     // Transmission
     uint8_t transaction(std::vector<uint8_t> &buffer, uint8_t ansLen);
