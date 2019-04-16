@@ -193,7 +193,7 @@ uint8_t MCU::setMaxAttempts(uint8_t cutAttempts, uint8_t coagAttempts, int attem
 
 uint8_t MCU::renewAll(std::vector<uint8_t>& payload, int attempts) const
 {
-    if (payload.size() != 49) {
+    if (payload.size() != MCU_SETALL_BUFFER_SIZE) {
         printLog(Info_log,static_cast<std::string>(__func__) + " wrong payload size");
         return NOK_SPI;
     }
