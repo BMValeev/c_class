@@ -8,6 +8,8 @@
 #include "SPI.h"
 #include "spipacket.h"
 
+#define MCU_SETALL_BUFFER_SIZE 50
+
 // This is a leaner class that contains commands and command definitions for ESU.
 // It inherits SPIPacket class and thus all the basic logic is contained there,
 // So the essense of the data interpretation is here, while logic is in the SPIPacket

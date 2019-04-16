@@ -243,58 +243,59 @@ uint8_t MCU::renewAll(uint8_t cutConnector,
     payload.reserve(49);
     // Fill in the payload
     // Common
-    payload.push_back(maxActTime);
-    payload.push_back(irrigation);
-    payload.push_back(irrigationDelay);
-    payload.push_back(mainLoopDelay & 0xFF);
-    payload.push_back(mainLoopDelay >> 8);
-    // Cut
-    payload.push_back(cutConnector);
-    payload.push_back(cutSubprogram);
-    payload.push_back(cutPower & 0xFF);
-    payload.push_back(cutPower >> 8);
-    payload.push_back(cutMaxVoltage & 0xFF);
-    payload.push_back(cutMaxVoltage >> 8);
-    payload.push_back(cutPWMFrequency & 0xFF);
-    payload.push_back(cutPWMFrequency >> 8);
-    payload.push_back(cutDutyCycle);
-    payload.push_back(cutCircuit);
-    payload.push_back(cutAdcBufferSize & 0xFF);
-    payload.push_back(cutAdcBufferSize >> 8);
-    payload.push_back(cutPlazmaStartLevel);
-    payload.push_back(cutPlazmaWorkLevel);
-    payload.push_back(cutPlazmaMaxCurrent & 0xFF);
-    payload.push_back(cutPlazmaMaxCurrent >> 8);
-    payload.push_back(cutPlazmaWorkCurrent & 0xFF);
-    payload.push_back(cutPlazmaWorkCurrent >> 8);
-    payload.push_back(cutPlazmaAttempts);
-    payload.push_back(cutPlazmaIrrigCurrent & 0xFF);
-    payload.push_back(cutPlazmaIrrigCurrent >> 8);
-    // Coag
-    payload.push_back(coagConnector);
-    payload.push_back(coagSubprogram);
-    payload.push_back(coagPower & 0xFF);
-    payload.push_back(coagPower >> 8);
-    payload.push_back(coagMaxVoltage & 0xFF);
-    payload.push_back(coagMaxVoltage >> 8);
-    payload.push_back(coagPWMFrequency & 0xFF);
-    payload.push_back(coagPWMFrequency >> 8);
-    payload.push_back(coagDutyCycle);
-    payload.push_back(coagCircuit);
-    payload.push_back(coagAdcBufferSize & 0xFF);
-    payload.push_back(coagAdcBufferSize >> 8);
-    payload.push_back(coagPlazmaStartLevel);
-    payload.push_back(coagPlazmaWorkLevel);
-    payload.push_back(coagPlazmaMaxCurrent & 0xFF);
-    payload.push_back(coagPlazmaMaxCurrent >> 8);
-    payload.push_back(coagPlazmaWorkCurrent & 0xFF);
-    payload.push_back(coagPlazmaWorkCurrent >> 8);
-    payload.push_back(coagPlazmaAttempts);
-    payload.push_back(coagPlazmaIrrigCurrent & 0xFF);
-    payload.push_back(coagPlazmaIrrigCurrent >> 8);
-    payload.push_back(autostartDelay);
-    payload.push_back(autostopResistance & 0xFF);
-    payload.push_back(autostopResistance >> 8);
+    payload.push_back(maxActTime);                    // 0
+    payload.push_back(irrigation);                    // 1
+    payload.push_back(irrigationDelay);               // 2
+    payload.push_back(mainLoopDelay & 0xFF);          // 3
+    payload.push_back(mainLoopDelay >> 8);            // 4
+    // Cut                                            //
+    payload.push_back(cutConnector);                  // 5
+    payload.push_back(cutSubprogram);                 // 6
+    payload.push_back(cutPower & 0xFF);               // 7
+    payload.push_back(cutPower >> 8);                 // 8
+    payload.push_back(cutMaxVoltage & 0xFF);          // 9
+    payload.push_back(cutMaxVoltage >> 8);            // 10
+    payload.push_back(cutPWMFrequency & 0xFF);        // 11
+    payload.push_back(cutPWMFrequency >> 8);          // 12
+    payload.push_back(cutDutyCycle);                  // 13
+    payload.push_back(cutCircuit);                    // 14
+    payload.push_back(cutAdcBufferSize & 0xFF);       // 15
+    payload.push_back(cutAdcBufferSize >> 8);         // 16
+    payload.push_back(cutPlazmaStartLevel);           // 17
+    payload.push_back(cutPlazmaWorkLevel);            // 18
+    payload.push_back(cutPlazmaMaxCurrent & 0xFF);    // 19
+    payload.push_back(cutPlazmaMaxCurrent >> 8);      // 20
+    payload.push_back(cutPlazmaWorkCurrent & 0xFF);   // 21
+    payload.push_back(cutPlazmaWorkCurrent >> 8);     // 22
+    payload.push_back(cutPlazmaAttempts);             // 23
+    payload.push_back(cutPlazmaIrrigCurrent & 0xFF);  // 24
+    payload.push_back(cutPlazmaIrrigCurrent >> 8);    // 25
+    // Coag                                           //
+    payload.push_back(coagConnector);                 // 26
+    payload.push_back(coagSubprogram);                // 27
+    payload.push_back(coagPower & 0xFF);              // 28
+    payload.push_back(coagPower >> 8);                // 29
+    payload.push_back(coagMaxVoltage & 0xFF);         // 30
+    payload.push_back(coagMaxVoltage >> 8);           // 31
+    payload.push_back(coagPWMFrequency & 0xFF);       // 32
+    payload.push_back(coagPWMFrequency >> 8);         // 33
+    payload.push_back(coagDutyCycle);                 // 34
+    payload.push_back(coagCircuit);                   // 35
+    payload.push_back(coagAdcBufferSize & 0xFF);      // 36
+    payload.push_back(coagAdcBufferSize >> 8);        // 37
+    payload.push_back(coagPlazmaStartLevel);          // 38
+    payload.push_back(coagPlazmaWorkLevel);           // 39
+    payload.push_back(coagPlazmaMaxCurrent & 0xFF);   // 40
+    payload.push_back(coagPlazmaMaxCurrent >> 8);     // 41
+    payload.push_back(coagPlazmaWorkCurrent & 0xFF);  // 42
+    payload.push_back(coagPlazmaWorkCurrent >> 8);    // 43
+    payload.push_back(coagPlazmaAttempts);            // 44
+    payload.push_back(coagPlazmaIrrigCurrent & 0xFF); // 45
+    payload.push_back(coagPlazmaIrrigCurrent >> 8);   // 46
+    // Only applied to coag
+    payload.push_back(autostartDelay);                // 47
+    payload.push_back(autostopResistance & 0xFF);     // 48
+    payload.push_back(autostopResistance >> 8);       // 49
 
     return renewAll(payload,attempts);
 }
