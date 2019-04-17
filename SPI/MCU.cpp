@@ -141,7 +141,7 @@ uint8_t MCU::setLoadCharacteristic(bool isCut, std::vector<uint16_t> &loadCharDa
     printLog(Info_log,static_cast<std::string>(__func__) + " started");
 
     // Payload also contains connector, circuit, voltage and 2 bytes CRC16
-    uint16_t payloadLen = static_cast<uint8_t>(loadCharData.size()*2 + 3);
+    uint16_t payloadLen = static_cast<uint16_t>(loadCharData.size()*2 + 3);
     std::vector<uint8_t> payload, answer;
     payload.reserve(payloadLen);
     // Fill in the payload

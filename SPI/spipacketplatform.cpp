@@ -20,21 +20,6 @@ SPIPacket::SPIPacket(std::string deviceName, LogCallback cb)
 
 uint8_t SPIPacket::send(uint8_t cmd, std::vector<uint8_t> &payload, std::vector<uint8_t> &answer, int attempts) const
 {
-#ifdef DEBUG
-    // This is debug branch, works only if SPI was not properly initialized
-    if (!SPI::getInstance().isHardwareInitialized())
-    {
-        printLog(Debug_log, static_cast<std::string>(__func__) + " debug branch answer");
-        answer.clear();
-        if (cmd == MCU::REQUEST_STATUS) // answer to any command other than REQUEST_STATUS
-        { // answer to REQUEST_STATUS
-            answer.push_back(0x00);
-            answer.push_back(0x00);
-        }
-        return OK_SPI;
-    }
-#endif
-
     // Get answer length
     uint8_t rxLen = getRxCnt(cmd);
 
