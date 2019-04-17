@@ -4,31 +4,43 @@
 
 #ifndef C_CLASS_CONNMODULE_H
 #define C_CLASS_CONNMODULE_H
-#include "I2C.h"
+
+#include "../defs.h"
+#include <vector>
+#include <map>
+
+#define CONN_MODULE_ADDRESS 0x70
+#define CONN_MODULE_PACKET_TRANSACTION_ATTEMPTS_NUMBER 3
+
 class ConnModule
 {
 public:
-    std::vector<unsigned char>getAddress();
-    void setAddress(std::vector<unsigned char> addr);
-    ConnModule(std::string filename,LogCallback cb);
-    ~ConnModule();
-    uint8_t SetUUID(uint32_t uuid,std::vector<unsigned char> &response);
-    uint8_t SetName(std::vector<unsigned char> data,std::vector<unsigned char> &response);
-    uint8_t StartInit(std::vector<unsigned char> &response);
-    uint8_t WriteString(std::vector<unsigned char> data,std::vector<unsigned char> &response);
-    uint8_t EndInit(std::vector<unsigned char> &response);
-    uint8_t CheckBonding(std::vector<unsigned char> &response);
-    uint8_t WriteValue(std::vector<unsigned char> id,std::vector<unsigned char> value,std::vector<unsigned char> &response);
-    uint8_t StartBonding(std::vector<unsigned char> db,std::vector<unsigned char> &response);
-    uint8_t ReadValue(uint16_t id_rec, std::map <uint16_t,std::vector<unsigned char>> answer);
-    uint8_t ReadLastChangedValue(std::map <uint16_t,std::vector<unsigned char>> answer);
+    ConnModule(std::string filename, LogCallback cb = printToCout);
+    ~ConnModule() { }
+
+    // Address
+    uint8_t getAddress() const { return mAddr; }
+    void setAddress(uint8_t mAddr);
+    // Commands
+    uint8_t setUUID(uint32_t uuid, std::vector<uint8_t> &response);
+    uint8_t setName(std::vector<uint8_t> data, std::vector<uint8_t> &response);
+    uint8_t startInit(std::vector<uint8_t> &response);
+    uint8_t writeString(std::vector<uint8_t> data, std::vector<uint8_t> &response);
+    uint8_t endInit(std::vector<uint8_t> &response);
+    uint8_t checkBonding(std::vector<uint8_t> &response);
+    uint8_t writeValue(std::vector<uint8_t> id, std::vector<uint8_t> value, std::vector<uint8_t> &response);
+    uint8_t startBonding(std::vector<uint8_t> db, std::vector<uint8_t> &response);
+    uint8_t readValue(uint16_t id_rec, std::map <uint16_t, std::vector<uint8_t>> answer);
+    uint8_t readLastChangedValue(std::map<uint16_t, std::vector<uint8_t> > &answer);
 
 private:
-    uint16_t WrongTransactions=3;
-    std::vector<unsigned char> addr;
-    std::vector<unsigned char> WriteArray(uint8_t command,std::vector<unsigned char> data,unsigned int len);
-    void PrintLog(uint8_t status, std::string text);
-    static void PrintToCout(uint8_t status, std::string msg);
-    LogCallback m_cb = ConnModule::PrintToCout;
+    LogCallback mCb;
+    uint16_t mAttempts;
+    uint8_t mAddr;
+
+    // Helpers
+    std::vector<uint8_t> writeArray(uint8_t command,std::vector<uint8_t> data, uint32_t len);
+    void printLog(uint8_t status, std::string text);
+    static void printToCout(uint8_t status, std::string msg);
 };
 #endif //C_CLASS_CONNMODULE_H

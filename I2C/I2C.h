@@ -27,7 +27,7 @@ public:
     static I2C & getInstance(LogCallback cb=PrintToCout);
     static void initInstance(LogCallback cb=PrintToCout);
     unsigned int begin(std::string device);
-    unsigned int transaction(std::vector<unsigned char> address,std::vector<unsigned char> buffer, unsigned int len);
+    unsigned int transaction(uint8_t address,std::vector<unsigned char> buffer, unsigned int len);
     std::vector<unsigned char> recData(void);
 private:
 
@@ -35,10 +35,10 @@ protected:
     I2C(LogCallback cb=PrintToCout);
     virtual ~I2C();
     void CleanRecMsg(void);
-    virtual int SendPacket(std::vector<unsigned char> address,std::vector<unsigned char> buffer, unsigned int len);
+    virtual int SendPacket(uint8_t address,std::vector<unsigned char> buffer, unsigned int len);
     const unsigned int MaxLen=40;
     static void PrintToCout(uint8_t status, std::string msg);
-    int SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned char> buffer, unsigned int rlen);
+    int SendRaw_new(uint8_t address, std::vector<unsigned char> buffer, unsigned int rlen);
     void PrintLog(uint8_t status, std::string text);
     void SetDeviceName(std::string Name);
     static I2C * theOneTrueInstance;

@@ -68,7 +68,7 @@ void I2C::PrintToCout(uint8_t status, string msg)
 }
 
 /*Unsafe Methods*/
-int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned char> buffer, unsigned int rlen)
+int I2C::SendRaw_new(uint8_t address, std::vector<unsigned char> buffer, unsigned int rlen)
 {
     int ret;
     int errnum;
@@ -84,11 +84,11 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
     i2c_msg message_packet[2];
     PrintLog(Debug_log,(std::string) __func__+  (std::string)" Send message");
     memset(&message_packet, 0, sizeof(i2c_msg)*2);
-    message_packet[0].addr=address.front();
+    message_packet[0].addr=address;
     message_packet[0].flags=0;
     message_packet[0].len=buffer.size();
     message_packet[0].buf=buffer.data();
-    message_packet[1].addr=address.front();
+    message_packet[1].addr=address;
     message_packet[1].flags=I2C_M_RD;//I2C_M_RD|I2C_M_RECV_LEN;I2C_M_NOSTART
     message_packet[1].buf=buf_rec;
     message_packet[1].len=10;
@@ -102,7 +102,7 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
         close(file);
         return NOK_I2C;
     }
-    if (ioctl(file, I2C_SLAVE, address.front()) < 0) {
+    if (ioctl(file, I2C_SLAVE, address) < 0) {
         PrintLog(Warning_log,(std::string) __func__+  (std::string)"Failed to acquire bus access and/or talk to slave");
         close(file);
         return NOK_I2C;
@@ -132,7 +132,7 @@ int I2C::SendRaw_new(std::vector<unsigned char> address, std::vector<unsigned ch
     }
  */
 
-int I2C::SendPacket(std::vector<unsigned char> address,std::vector<unsigned char> buffer, unsigned int len)
+int I2C::SendPacket(uint8_t address,std::vector<unsigned char> buffer, unsigned int len)
 {
     std::vector<unsigned char> package;
     for(unsigned int i=0;i<buffer.size();i++) {
@@ -158,7 +158,7 @@ unsigned int I2C::begin(std::string device)
     this->Mutex.unlock();
     return 0;
 }
-unsigned int I2C::transaction(std::vector<unsigned char> address,std::vector<unsigned char> buffer, unsigned int len)
+unsigned int I2C::transaction(uint8_t address,std::vector<unsigned char> buffer, unsigned int len)
 {
     this->Mutex.lock();
     if (SendPacket(address,buffer,len)) {

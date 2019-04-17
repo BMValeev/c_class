@@ -32,6 +32,11 @@ void SPIPacket::printToCout(uint8_t status, std::string msg)
     std::cout << status << msg << std::endl;
 }
 
+uint8_t SPIPacket::getRxCnt(uint8_t) const
+{
+    return 0;
+}
+
 uint8_t SPIPacket::sendBool(uint8_t cmd, bool value, int attempts) const
 {
     // printLog(Debug_log, static_cast<std::string>(__func__) + " started");

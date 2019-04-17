@@ -16,8 +16,8 @@
 class SPIPacket
 {
 public:
-    SPIPacket(std::string deviceName, LogCallback cb);
-    //~SPIPacket() { }
+    SPIPacket(std::string deviceName, LogCallback cb = printToCout);
+    virtual ~SPIPacket() { }
 
 private:
     const LogCallback mCb;
@@ -32,7 +32,7 @@ protected:
     static void printToCout(uint8_t status, std::string msg);
 
     // Helpers
-    virtual uint8_t getRxCnt(uint8_t) const { return 0; }
+    virtual uint8_t getRxCnt(uint8_t) const;
     uint8_t sendBool(uint8_t cmd, bool value, int attempts = SPI_PACKET_TRANSACTION_ATTEMPTS_NUMBER) const;
     uint8_t send1Uint8(uint8_t cmd, uint8_t value, int attempts = SPI_PACKET_TRANSACTION_ATTEMPTS_NUMBER) const;
     uint8_t send2Uint8(uint8_t cmd, uint8_t value1, uint8_t value2, int attempts = SPI_PACKET_TRANSACTION_ATTEMPTS_NUMBER) const;
