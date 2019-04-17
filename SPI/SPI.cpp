@@ -18,8 +18,8 @@
 // SPI class
 SPI* SPI::theOneTrueInstance = nullptr;
 
-// Construction and destruction
-SPI& SPI::getInstance()
+/* Unsafe methods */
+SPI &SPI::getInstance()
 {
     if (theOneTrueInstance == nullptr) {
         // Allocate on heap so that it does not get destroyed after
@@ -35,6 +35,29 @@ SPI::SPI() : mCb(SPI::printToCout), mHardwareInitialized(false), mInit(false)
         throw std::logic_error("Instance already exists");
 
     theOneTrueInstance = this;
+}
+
+void SPI::printLog(uint8_t status, std::string text)
+{
+    if (mCb == nullptr)
+        return;
+
+    mCb(status, text);
+}
+
+void SPI::printToCout(uint8_t status, std::string msg)
+{
+    std::cout << status << msg << std::endl;
+}
+
+/* Used for configuration of the device in construction */
+void SPI::setDeviceName(std::string name)
+{
+    if (mDeviceName == name)
+        return;
+
+    mDeviceName = name;
+    printLog(Info_log, "SPI --> new device name set - " + mDeviceName);
 }
 
 uint8_t SPI::begin(std::string device, LogCallback cb)/*Need to check*/
@@ -127,7 +150,7 @@ uint8_t SPI::transaction(std::vector<uint8_t>& buffer, uint8_t ansLen) /*Need to
     // Tx config
     send[0].tx_buf = reinterpret_cast<unsigned long>(buffer.data());
     send[0].rx_buf = reinterpret_cast<unsigned long>(nullptr);
-    send[0].len = buffer.size();
+    send[0].len = static_cast<unsigned int>(buffer.size());
     send[0].delay_usecs = SPI_TX_RX_PAUSE_US;
     send[0].speed_hz = mSpeed;
     send[0].bits_per_word = mBitsPerWord;
@@ -168,27 +191,6 @@ uint8_t SPI::transaction(std::vector<uint8_t>& buffer, uint8_t ansLen) /*Need to
     return OK_SPI;
 }
 
-/* Used for configuration of the device in construction */
-void SPI::setDeviceName(std::string name)
-{
-    if (mDeviceName == name)
-        return;
 
-    mDeviceName = name;
-    printLog(Info_log, "SPI --> new device name set - " + mDeviceName);
-}
 
-/* Safe methods */
-void SPI::printLog(uint8_t status, std::string text)
-{
-    if (mCb == nullptr)
-        return;
-
-    mCb(status, text);
-}
-
-void SPI::printToCout(uint8_t status, std::string msg)
-{
-    std::cout << status << msg << std::endl;
-}
 

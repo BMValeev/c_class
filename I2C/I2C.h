@@ -9,14 +9,12 @@
 #include <string>
 #include <cstring>
 #include <iostream>
-#include <vector>
 #include <algorithm>
 #include <map>
 #include <mutex>
 #include <cstdio>
 #include <cerrno>
 #include <cstdlib>
-#include <iostream>
 
 #include "../defs.h"
 

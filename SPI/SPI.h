@@ -40,12 +40,12 @@
     #define SPI_RX_BUFFER_SIZE 10
 #endif
 
-
 // Low level class that implements basic information exchange via SPI on Hamming board
 class SPI
 {
 public:
     static SPI & getInstance();
+
     uint8_t begin(std::string device, LogCallback cb);
     std::vector<uint8_t> recData(void) const { return mLastRecMsg; }
     void resetRecData() { std::fill(mLastRecMsg.begin(), mLastRecMsg.end(), 0); }
@@ -58,7 +58,7 @@ public:
 
 protected:
     SPI();
-    virtual ~SPI() { }
+    ~SPI() { }
 
 private:
     static SPI* theOneTrueInstance;
@@ -66,16 +66,16 @@ private:
     std::string mDeviceName;
     std::vector<uint8_t> mLastRecMsg;
     std::mutex mMutex;
-    bool mHardwareInitialized;
     int mSpifd;
+    uint32_t mSpeed;
+    bool mHardwareInitialized;
     uint8_t mMode;
     uint8_t mBitsPerWord;
-    uint32_t mSpeed;
     bool mInit;
 
     // Helpers
-    void printLog(uint8_t mHardwareInitialized, std::string text);
-    static void printToCout(uint8_t mHardwareInitialized, std::string msg);
+    void printLog(uint8_t status, std::string text);
+    static void printToCout(uint8_t status, std::string msg);
     void setDeviceName(std::string name);
 
 };
