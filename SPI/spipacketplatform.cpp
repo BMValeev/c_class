@@ -28,7 +28,7 @@ uint8_t SPIPacket::send(uint8_t cmd, std::vector<uint8_t> &payload, std::vector<
         printLog(Debug_log, static_cast<std::string>(__func__) + " transactions left: " + std::to_string(attempts));
 
         // Send message
-        if (transaction(cmd, payload, answer, rxLen))
+        if (transaction(cmd, payload, answer, rxLen) != OK_SPI)
             continue;
 
         if (answer.size() != rxLen-1)

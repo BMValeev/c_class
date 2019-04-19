@@ -15,6 +15,8 @@
 
 #include "../Rest/crc.h"
 
+#include <QDebug> // Remove this!!!
+
 // SPI class
 SPI* SPI::theOneTrueInstance = nullptr;
 
@@ -145,6 +147,7 @@ uint8_t SPI::transaction(std::vector<uint8_t>& buffer, uint8_t ansLen) /*Need to
     printLog(Debug_log, static_cast<std::string>(__func__) + std::to_string(buffer.size()));
 
     // uint8_t receive[ansLen];
+    mLastRecMsg.resize(ansLen, 0);
     resetRecData();
     spi_ioc_transfer send[2];
     // Tx config
@@ -179,6 +182,7 @@ uint8_t SPI::transaction(std::vector<uint8_t>& buffer, uint8_t ansLen) /*Need to
         printLog(Warning_log, static_cast<std::string>(__func__) + static_cast<std::string>(strerror(errno)) + " error ocurred during transmission" );
         return NOK_SPI;
     }
+    qWarning() << "received buffer = " << mLastRecMsg;
 
     // ToDo: maybe it is possible to just pass pointer mLastRecMsg.data() to structure above, to avoid copying
     /* resetRecData();
