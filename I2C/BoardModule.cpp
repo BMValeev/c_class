@@ -13,11 +13,11 @@ BoardModule::BoardModule(std::string filename, LogCallback cb)
     : I2CPacket(filename, BOARD_MODULE_ADDRESS, cb)
 { }
 
-uint8_t BoardModule::setBonding(uint8_t enable,std::vector<uint8_t> &response)
+uint8_t BoardModule::setBonding(uint8_t enable, std::vector<uint8_t> &response, int attempts)
 {
     std::vector<uint8_t> msg;
     msg.push_back(enable);
-    response = writeArray(0x06, msg, 4);
+    response = writeArray(SET_BONDING, msg, 4, attempts);
     if (response.size() != 2) {
         printLog(DebugLog, static_cast<std::string>(__func__) + "GetVersion failed");
         return NOK_I2C;
@@ -26,10 +26,10 @@ uint8_t BoardModule::setBonding(uint8_t enable,std::vector<uint8_t> &response)
     return OK_I2C;
 }
 
-uint8_t BoardModule::getVersion(std::vector<uint8_t> &response)
+uint8_t BoardModule::getVersion(std::vector<uint8_t> &response, int attempts)
 {
     std::vector<uint8_t> msg;
-    response = writeArray(0x01, msg, 4);
+    response = writeArray(GET_VERSION, msg, 4, attempts);
     if (response.size() != 2) {
         printLog(DebugLog, static_cast<std::string>(__func__) + "GetVersion failed");
         return NOK_I2C;
@@ -38,10 +38,10 @@ uint8_t BoardModule::getVersion(std::vector<uint8_t> &response)
     return OK_I2C;
 }
 
-uint8_t BoardModule::getTools(std::vector<uint8_t> &response)
+uint8_t BoardModule::getTools(std::vector<uint8_t> &response, int attempts)
 {
     std::vector<uint8_t> msg;
-    response = writeArray(0x02, msg, 4);
+    response = writeArray(GET_TOOLS, msg, 4, attempts);
     if (response.size() != 2) {
         printLog(DebugLog, static_cast<std::string>(__func__) + "GetTools failed");
         return NOK_I2C;
@@ -50,10 +50,10 @@ uint8_t BoardModule::getTools(std::vector<uint8_t> &response)
     return OK_I2C;
 }
 
-uint8_t BoardModule::getPower(std::vector<uint8_t> &responce)
+uint8_t BoardModule::getPower(std::vector<uint8_t> &responce, int attempts)
 {
     std::vector<uint8_t> msg;
-    responce = writeArray(0x03, msg, 3);
+    responce = writeArray(GET_POWER, msg, 3, attempts);
     if (responce.size() != 1) {
         printLog(DebugLog, static_cast<std::string>(__func__) + "GetPower failed");
         return NOK_I2C;
@@ -62,11 +62,11 @@ uint8_t BoardModule::getPower(std::vector<uint8_t> &responce)
     return OK_I2C;
 }
 
-uint8_t BoardModule::setEnergy(uint8_t energy,std::vector<uint8_t> &responce)
+uint8_t BoardModule::setEnergy(uint8_t energy, std::vector<uint8_t> &responce, int attempts)
 {
     std::vector<uint8_t> msg;
     msg.push_back(energy);
-    responce = writeArray(0x04, msg, 3);
+    responce = writeArray(SET_ENERGY, msg, 3, attempts);
     if (responce.size() != 1) {
         printLog(DebugLog, static_cast<std::string>(__func__) + "SetEnergy failed");
         return NOK_I2C;
@@ -79,11 +79,11 @@ uint8_t BoardModule::setEnergy(uint8_t energy,std::vector<uint8_t> &responce)
     return NOK_I2C;
 }
 
-uint8_t BoardModule::setVolume(uint8_t volume,std::vector<uint8_t> &responce)
+uint8_t BoardModule::setVolume(uint8_t volume,std::vector<uint8_t> &responce, int attempts)
 {
     std::vector<uint8_t> msg;
     msg.push_back(volume);
-    responce = writeArray(0x05, msg, 3);
+    responce = writeArray(SET_VOLUME, msg, 3, attempts);
     if (responce.size() != 1) {
         printLog(DebugLog, static_cast<std::string>(__func__) + "SetVolume failed");
         return NOK_I2C;

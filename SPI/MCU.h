@@ -18,49 +18,6 @@ class MCU : private SPIPacket
 public:
     MCU(std::string filename, LogCallback cb = printToCout) : SPIPacket(filename, cb) { }
 
-    enum Programs
-    {
-        OFF = 0x00,
-        TERMLC,
-        TERMU,
-        AUTOSTOP,
-        AUTOSTART,
-        PLAZMA,
-        TEST
-    };
-
-    enum Cmd
-    {
-        // Common parameters
-        SET_STANDBY            = 0x01,
-        REQUEST_STATUS         = 0x02,
-        SET_CONNECTOR          = 0x03,
-        SET_SUBPROGRAM         = 0x04,
-        SET_ALL                = 0x05,
-        SET_MAX_ACT_TIME       = 0x06,
-        SET_IRRIGATION         = 0x07,
-        SET_IRRIGATION_DELAY   = 0x08,
-        SET_MAIN_LOOP_DELAY    = 0x09,
-        WRITE_CALLIBR_CHARACT  = 0x0A,
-        // Termic modes parameters
-        SET_POWER              = 0x0B,
-        SET_MAX_U              = 0x0C,
-        SET_AUTOSTART_DELAY    = 0x0D,
-        SET_AUTOSTOP_THRESHOLD = 0x0E,
-        SET_MOD_FREQ           = 0x0F,
-        SET_MOD_DUTY_CYCLE     = 0x10,
-        SET_CIRCUIT            = 0x11,
-        SET_ADC_BUFFER_SIZE    = 0x12,
-        SET_LOAD_CHARACT       = 0x13,
-        // Plazma modes parameters
-        SET_START_VOLTAGE_LEVEL = 0x14,
-        SET_WORK_VOLTAGE_LEVEL  = 0x15,
-        SET_MAX_CURRENT         = 0x16,
-        SET_WORK_CURRENT        = 0x17,
-        SET_MAX_PLAZMA_ATTEMPTS = 0x18,
-        SET_IRRIGATION_CURRENT  = 0x19
-    };
-
     // Common
     uint8_t setStanby(uint8_t status, int attempts = SPI_PACKET_TRANSACTION_ATTEMPTS_NUMBER) const;
     uint8_t checkStatus(std::vector<uint8_t> &answer, int attempts = SPI_PACKET_TRANSACTION_ATTEMPTS_NUMBER) const;
@@ -125,6 +82,49 @@ public:
                      uint16_t cutPlazmaIrrigCurrent,
                      uint16_t coagPlazmaIrrigCurrent,
                      int attempts = SPI_PACKET_TRANSACTION_ATTEMPTS_NUMBER) const;
+
+    enum Programs
+    {
+        OFF = 0x00,
+        TERMLC,
+        TERMU,
+        AUTOSTOP,
+        AUTOSTART,
+        PLAZMA,
+        TEST
+    };
+
+    enum Cmd
+    {
+        // Common parameters
+        SET_STANDBY            = 0x01,
+        REQUEST_STATUS         = 0x02,
+        SET_CONNECTOR          = 0x03,
+        SET_SUBPROGRAM         = 0x04,
+        SET_ALL                = 0x05,
+        SET_MAX_ACT_TIME       = 0x06,
+        SET_IRRIGATION         = 0x07,
+        SET_IRRIGATION_DELAY   = 0x08,
+        SET_MAIN_LOOP_DELAY    = 0x09,
+        WRITE_CALLIBR_CHARACT  = 0x0A,
+        // Termic modes parameters
+        SET_POWER              = 0x0B,
+        SET_MAX_U              = 0x0C,
+        SET_AUTOSTART_DELAY    = 0x0D,
+        SET_AUTOSTOP_THRESHOLD = 0x0E,
+        SET_MOD_FREQ           = 0x0F,
+        SET_MOD_DUTY_CYCLE     = 0x10,
+        SET_CIRCUIT            = 0x11,
+        SET_ADC_BUFFER_SIZE    = 0x12,
+        SET_LOAD_CHARACT       = 0x13,
+        // Plazma modes parameters
+        SET_START_VOLTAGE_LEVEL = 0x14,
+        SET_WORK_VOLTAGE_LEVEL  = 0x15,
+        SET_MAX_CURRENT         = 0x16,
+        SET_WORK_CURRENT        = 0x17,
+        SET_MAX_PLAZMA_ATTEMPTS = 0x18,
+        SET_IRRIGATION_CURRENT  = 0x19
+    };
 
 private:
     // Helpers

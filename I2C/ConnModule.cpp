@@ -16,7 +16,7 @@ ConnModule::ConnModule(std::string filename, LogCallback cb)
     i2c.begin(filename, cb);
 }
 
-uint8_t ConnModule::setUUID(uint32_t uuid, std::vector<uint8_t> &response)
+uint8_t ConnModule::setUUID(uint32_t uuid, std::vector<uint8_t> &response, int attempts)
 {
     // Construct uuid array of bytes
     std::vector<uint8_t> uuid_b;
@@ -25,7 +25,7 @@ uint8_t ConnModule::setUUID(uint32_t uuid, std::vector<uint8_t> &response)
     uuid_b.push_back((uuid>>16) & 0xFF);
     uuid_b.push_back((uuid>>24) & 0xFF);
     // Send
-    response=writeArray(0x01, uuid_b, 3);
+    response=writeArray(SET_UUID, uuid_b, 3, attempts);
     if (response.size()!=1)
     {
         printLog(DebugLog, static_cast<std::string>(__func__) + "Set UUID failed");
@@ -40,9 +40,9 @@ uint8_t ConnModule::setUUID(uint32_t uuid, std::vector<uint8_t> &response)
     return NOK_I2C;
 }
 
-uint8_t ConnModule::setName(std::vector<uint8_t> data, std::vector<uint8_t> &response)
+uint8_t ConnModule::setName(std::vector<uint8_t> data, std::vector<uint8_t> &response, int attempts)
 {
-    response=writeArray(0x02, data, 3);
+    response=writeArray(SET_NAME, data, 3, attempts);
     if (response.size()!=1)
     {
         printLog(DebugLog, static_cast<std::string>(__func__) + "Set SetName failed");
@@ -57,10 +57,10 @@ uint8_t ConnModule::setName(std::vector<uint8_t> data, std::vector<uint8_t> &res
     return NOK_I2C;
 }
 
-uint8_t ConnModule::startInit(std::vector<uint8_t> &response)
+uint8_t ConnModule::startInit(std::vector<uint8_t> &response, int attempts)
 {
     std::vector<uint8_t> data;
-    response=writeArray(0x03, data, 3);
+    response=writeArray(START_INIT, data, 3, attempts);
     if (response.size()!=1)
     {
         printLog(DebugLog, static_cast<std::string>(__func__) + "StartInit failed");
@@ -75,9 +75,9 @@ uint8_t ConnModule::startInit(std::vector<uint8_t> &response)
     return NOK_I2C;
 }
 
-uint8_t ConnModule::writeString(std::vector<uint8_t> data, std::vector<uint8_t> &response)
+uint8_t ConnModule::writeRecord(std::vector<uint8_t> data, std::vector<uint8_t> &response, int attempts)
 {
-    response=writeArray(0x04, data, 3);
+    response=writeArray(WRITE_RECORD, data, 3, attempts);
     if (response.size()!=1)
     {
         printLog(DebugLog, static_cast<std::string>(__func__) + "WriteString failed");
@@ -92,10 +92,10 @@ uint8_t ConnModule::writeString(std::vector<uint8_t> data, std::vector<uint8_t> 
     return NOK_I2C;
 }
 
-uint8_t ConnModule::endInit(std::vector<uint8_t> &response)
+uint8_t ConnModule::endInit(std::vector<uint8_t> &response, int attempts)
 {
     std::vector<uint8_t> data;
-    response=writeArray(0x05, data, 3);
+    response=writeArray(END_INIT, data, 3, attempts);
     if (response.size()!=1)
     {
         printLog(DebugLog, static_cast<std::string>(__func__) + "EndInit failed");
@@ -110,10 +110,10 @@ uint8_t ConnModule::endInit(std::vector<uint8_t> &response)
     return NOK_I2C;
 }
 
-uint8_t ConnModule::checkBonding(std::vector<uint8_t> &response)
+uint8_t ConnModule::checkBonding(std::vector<uint8_t> &response, int attempts)
 {
     std::vector<uint8_t> data;
-    response=writeArray(0x09, data, 3);
+    response=writeArray(CHECK_BONDING, data, 3, attempts);
     if (response.size()!=1)
     {
         printLog(DebugLog, static_cast<std::string>(__func__) + "CheckBonding failed");
@@ -123,12 +123,12 @@ uint8_t ConnModule::checkBonding(std::vector<uint8_t> &response)
     return OK_I2C;
 }
 
-uint8_t ConnModule::writeValue(std::vector<uint8_t> id, std::vector<uint8_t> value, std::vector<uint8_t> &response)
+uint8_t ConnModule::writeValue(std::vector<uint8_t> id, std::vector<uint8_t> value, std::vector<uint8_t> &response, int attempts)
 {
     std::vector<uint8_t> data;
     data.insert(std::end(data), std::begin(id), std::end(id));
     data.insert(std::end(data), std::begin(value), std::end(value));
-    response=writeArray(0x06, data, 3);
+    response=writeArray(WRITE_VALUE, data, 3, attempts);
     if (response.size()!=1)
     {
         printLog(DebugLog, static_cast<std::string>(__func__) + "WriteValue failed, wrong responce");
@@ -143,9 +143,9 @@ uint8_t ConnModule::writeValue(std::vector<uint8_t> id, std::vector<uint8_t> val
     return NOK_I2C;
 }
 
-uint8_t ConnModule::startBonding(std::vector<uint8_t> db, std::vector<uint8_t> &response)
+uint8_t ConnModule::startBonding(std::vector<uint8_t> db, std::vector<uint8_t> &response, int attempts)
 {
-    response=writeArray(0x08, db, 3);
+    response=writeArray(START_BONDING, db, 3, attempts);
     if (response.size()!=1)
     {
         printLog(DebugLog, static_cast<std::string>(__func__) + "StartBonding failed");
@@ -160,7 +160,7 @@ uint8_t ConnModule::startBonding(std::vector<uint8_t> db, std::vector<uint8_t> &
     return NOK_I2C;
 }
 
-uint8_t ConnModule::readValue(uint16_t id_rec, std::map<uint16_t,std::vector<uint8_t>> answer) /*change order of message*/
+uint8_t ConnModule::readValue(uint16_t id_rec, std::map<uint16_t,std::vector<uint8_t>> answer, int attempts) /*change order of message*/
 {
     std::vector<uint8_t> responce;
     std::vector<uint8_t> data,val;
@@ -168,7 +168,7 @@ uint8_t ConnModule::readValue(uint16_t id_rec, std::map<uint16_t,std::vector<uin
     //uint32_t value=0x00000000;
     data.push_back(id_rec&0xff);
     data.push_back((id_rec>>8)&0xff);
-    responce=writeArray(0x07, data, 8);
+    responce=writeArray(READ_VALUE, data, 8, attempts);
     if (responce.size()==0)
     {
         printLog(DebugLog, static_cast<std::string>(__func__) + "ReadValue failed");
@@ -197,13 +197,13 @@ uint8_t ConnModule::readValue(uint16_t id_rec, std::map<uint16_t,std::vector<uin
     return OK_I2C;
 
 }
-uint8_t ConnModule::readLastChangedValue(std::map<uint16_t,std::vector<uint8_t>>& answer) /*change order of message*/
+uint8_t ConnModule::readLastChangedValue(std::map<uint16_t,std::vector<uint8_t>>& answer, int attempts) /*change order of message*/
 {
     std::vector<uint8_t> response;
     std::vector<uint8_t> data, val;
     uint16_t id;
 
-    response=writeArray(0x0C, data, 10);
+    response=writeArray(READ_LAST, data, 10, attempts);
     if (response.size()==0)
     {
         return OK_I2C;

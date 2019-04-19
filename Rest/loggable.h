@@ -3,20 +3,21 @@
 
 #include "../defs.h"
 
-enum LogStatus
-{
-    InfoLog = 1,
-    DebugLog = 2,
-    WarningLog = 3,
-    CriticalLog = 4
-};
-
 typedef std::function<void(uint8_t, std::string)> LogCallback;
 
 class Loggable
 {
 public:
     Loggable(LogCallback cb = printToCout) : mCb(cb) { }
+
+    enum LogStatus
+    {
+        InfoLog = 1,
+        DebugLog = 2,
+        WarningLog = 3,
+        CriticalLog = 4
+    };
+
     void setLogCallback(LogCallback cb);
 
 protected:
