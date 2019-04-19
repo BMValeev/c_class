@@ -10,13 +10,8 @@
 // BoardModule class
 // Construction and destruction
 BoardModule::BoardModule(std::string filename, LogCallback cb)
-    : Loggable(cb)
-    , mAddr(BOARD_MODULE_ADDRESS)
-    , mAttempts(BOARD_MODULE_PACKET_TRANSACTION_ATTEMPTS_NUMBER)
-{
-    I2C &i2c = I2C::getInstance();
-    i2c.begin(filename);
-}
+    : I2CPacket(filename, BOARD_MODULE_ADDRESS, cb)
+{ }
 
 uint8_t BoardModule::setBonding(uint8_t enable,std::vector<uint8_t> &response)
 {
@@ -99,44 +94,6 @@ uint8_t BoardModule::setVolume(uint8_t volume,std::vector<uint8_t> &responce)
     }
     printLog(DebugLog, static_cast<std::string>(__func__) + "SetVolume failed");
     return NOK_I2C;
-}
-
-std::vector<uint8_t> BoardModule::writeArray(uint8_t command,std::vector<uint8_t> data,uint32_t len)
-{
-    I2C& i2c = I2C::getInstance();
-    uint32_t cnt = mAttempts;
-    uint8_t l_len=2;
-    std::vector<uint8_t> msg, answer,null,l_answer;
-    l_len += static_cast<uint8_t>(data.size());
-    msg.push_back(static_cast<uint8_t>(mAddr << 1));
-    msg.push_back(l_len);
-    msg.push_back(command);
-    for(uint32_t i=0;i<data.size();i++) {
-        msg.push_back(data[i]);
-    }
-    msg.push_back(CRC::crc8(msg.data(),msg.size()));
-    msg.erase(msg.begin());
-    while(cnt--) {
-        if(i2c.transaction(mAddr,msg,len)==OK_I2C){
-            answer=i2c.recData();
-            l_len=answer.front()+1;
-            l_answer.clear();
-            l_answer.push_back(static_cast<uint8_t>(mAddr << 1));
-            while (l_len--) {
-                l_answer.push_back(answer.front());
-                answer.erase(answer.begin());
-            }
-            if (CRC::crc8(l_answer.data(),l_answer.size()-1)==l_answer.back()) {
-                printLog(DebugLog, static_cast<std::string>(__func__) + "CRC Ok");
-                l_answer.erase(l_answer.begin());
-                l_answer.erase(l_answer.begin());
-                l_answer.pop_back();
-                return l_answer;
-            }
-            printLog(DebugLog, static_cast<std::string>(__func__) + "CRC NOK");
-        }
-    }
-    return null;
 }
 
 #ifdef C_CLASS_DEBUG

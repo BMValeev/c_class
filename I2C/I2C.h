@@ -37,7 +37,7 @@ public:
     bool isInitialized() const { return theOneTrueInstance != nullptr; }
 
     // Transmission
-    uint32_t transaction(uint8_t address, std::vector<uint8_t> buffer, uint32_t len);
+    uint32_t transaction(uint8_t address, std::vector<uint8_t> buffer, uint32_t ansLen);
 
 protected:
     I2C();
@@ -54,9 +54,7 @@ private:
     struct i2c_client *mI2CData;
 
     // Helpers
-    virtual int sendPacket(uint8_t address,std::vector<uint8_t> buffer, uint32_t len);
     void setDeviceName(std::string name);
-    int sendRawNew(uint8_t address, std::vector<uint8_t> buffer, uint32_t rlen);
 
 };
 

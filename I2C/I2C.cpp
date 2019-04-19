@@ -67,15 +67,17 @@ uint32_t I2C::begin(std::string device, LogCallback cb)
     return OK_I2C;
 }
 
-/*Unsafe Methods*/
-int I2C::sendRawNew(uint8_t address, std::vector<uint8_t> buffer, uint32_t rlen)
+uint32_t I2C::transaction(uint8_t address, std::vector<uint8_t> buffer, uint32_t ansLen)
 {
+    // Lock the mutex first
+    std::lock_guard<std::mutex> lock(mMutex); // automatically unlocks when function is leaved, no need to call unlock
+
+    cleanRecMsg();
     int ret;
     uint32_t cnt, cnt_all;
-    uint8_t buf_rec[40]={0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+    uint8_t buf_rec[40] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
             ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-    //uint8_t buf_rec[rlen];
-    //memset(&buf_rec, 0, sizeof(uint8_t)*rlen);
+
     std::string data_send,data_rec;
     i2c_rdwr_ioctl_data message;
     memset(&message, 0, sizeof(message));
@@ -90,10 +92,10 @@ int I2C::sendRawNew(uint8_t address, std::vector<uint8_t> buffer, uint32_t rlen)
     message_packet[1].flags=I2C_M_RD;//I2C_M_RD|I2C_M_RECV_LEN;I2C_M_NOSTART
     message_packet[1].buf=buf_rec;
     message_packet[1].len=10;
-    message_packet[1].len = static_cast<uint16_t>((rlen==0)? 10 : rlen);
-    cnt_all= (rlen==0)?10:rlen;
+    message_packet[1].len = static_cast<uint16_t>((ansLen==0)? 10 : ansLen);
+    cnt_all= (ansLen==0)? 10 : ansLen;
     message.msgs=message_packet;
-    message.nmsgs =(rlen!=0) ?  2:1;
+    message.nmsgs =(ansLen!=0) ?  2:1;
     int file = open(mDeviceName.c_str(), O_RDWR);
     if (file == -1) {
         printLog(WarningLog,static_cast<std::string>(__func__) + "Device open error");
@@ -121,31 +123,10 @@ int I2C::sendRawNew(uint8_t address, std::vector<uint8_t> buffer, uint32_t rlen)
     return OK_I2C;
 }
 /*
- *     if (flag){
+ *  if (flag){
         cnt_all=cnt_all-LastRecMsg.front();
         while (--cnt_all) {
             LastRecMsg.pop_back();
         }
     }
- */
-
-int I2C::sendPacket(uint8_t address,std::vector<uint8_t> buffer, uint32_t len)
-{
-    std::vector<uint8_t> package;
-    for(uint32_t i=0;i<buffer.size();i++) {
-        package.push_back(buffer[i]);
-    }
-    cleanRecMsg();
-    return (sendRawNew(address, package,len)) ? NOK_I2C : OK_I2C;
-}
-
-uint32_t I2C::transaction(uint8_t address,std::vector<uint8_t> buffer, uint32_t len)
-{
-    mMutex.lock();
-    if (sendPacket(address,buffer,len)) {
-        mMutex.unlock();
-        return NOK_I2C;
-    }
-    mMutex.unlock();
-    return OK_I2C;
-}
+*/
