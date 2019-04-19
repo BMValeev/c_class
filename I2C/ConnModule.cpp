@@ -60,7 +60,7 @@ uint8_t ConnModule::setName(std::vector<uint8_t> data, std::vector<uint8_t> &res
 uint8_t ConnModule::startInit(std::vector<uint8_t> &response, int attempts)
 {
     std::vector<uint8_t> data;
-    response=writeArray(START_INIT, data, 3, attempts);
+    response = writeArray(START_INIT, data, 3, attempts);
     if (response.size()!=1)
     {
         printLog(DebugLog, static_cast<std::string>(__func__) + "StartInit failed");
@@ -77,7 +77,7 @@ uint8_t ConnModule::startInit(std::vector<uint8_t> &response, int attempts)
 
 uint8_t ConnModule::writeRecord(std::vector<uint8_t> data, std::vector<uint8_t> &response, int attempts)
 {
-    response=writeArray(WRITE_RECORD, data, 3, attempts);
+    response = writeArray(WRITE_RECORD, data, 3, attempts);
     if (response.size()!=1)
     {
         printLog(DebugLog, static_cast<std::string>(__func__) + "WriteString failed");

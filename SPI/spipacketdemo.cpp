@@ -5,7 +5,7 @@
 #include "MCU.h" // this is only for debug mode to form answer, probably remove later
 
 SPIPacket::SPIPacket(std::string deviceName, LogCallback cb)
-    : mCb(cb)
+    : Loggable(cb)
     , mDeviceName(deviceName)
 { }
 

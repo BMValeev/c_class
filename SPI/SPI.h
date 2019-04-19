@@ -48,7 +48,7 @@ class SPI : public Loggable
 public:
     static SPI & getInstance();
 
-    uint8_t begin(std::string device, LogCallback cb = printToCout);
+    uint8_t begin(std::string deviceName, LogCallback cb = printToCout);
     std::vector<uint8_t> recData() const { return mLastRecMsg; }
     void resetRecData() { std::fill(mLastRecMsg.begin(), mLastRecMsg.end(), 0); }
     bool isInitialized() const { return theOneTrueInstance != nullptr; }

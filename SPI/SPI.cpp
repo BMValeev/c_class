@@ -50,7 +50,7 @@ void SPI::setDeviceName(std::string name)
     printLog(InfoLog, "SPI --> new device name set - " + mDeviceName);
 }
 
-uint8_t SPI::begin(std::string device, LogCallback cb) /*Need to check*/
+uint8_t SPI::begin(std::string deviceName, LogCallback cb) /*Need to check*/
 {
     // Lock the mutex first
     std::lock_guard<std::mutex> lock(mMutex); // automatically unlocks when function is leaved, no need to call unlock
@@ -60,7 +60,7 @@ uint8_t SPI::begin(std::string device, LogCallback cb) /*Need to check*/
 
     // Setups
     mLastRecMsg.reserve(SPI_RX_BUFFER_SIZE); // will always have fixed size
-    setDeviceName(device);
+    setDeviceName(deviceName);
 
     // Initialization
     mHardwareInitialized = false;
