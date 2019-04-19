@@ -5,6 +5,7 @@
 
 #include "../defs.h"
 #include "../Rest/crc.h"
+#include "../Rest/loggable.h"
 
 #define SPI_PACKET_MAX_TX_SIZE 16384
 #define SPI_PACKET_TRANSACTION_ATTEMPTS_NUMBER 3
@@ -13,14 +14,13 @@
 // It constructs transmit buffer with length byte, command byte, payload and CRC8
 // The several helper functions are also available to form common types of payload
 // The "send" function implements repeated send logic, "transaction" calls SPI functions
-class SPIPacket
+class SPIPacket : public Loggable
 {
 public:
     SPIPacket(std::string deviceName, LogCallback cb = printToCout);
     virtual ~SPIPacket() { }
 
 private:
-    const LogCallback mCb;
     const std::string mDeviceName;
 
     // Helpers
@@ -28,9 +28,6 @@ private:
     static uint16_t byteToLen(uint8_t byte);
 
 protected:
-    void printLog(uint8_t status, std::string text) const;
-    static void printToCout(uint8_t status, std::string msg);
-
     // Helpers
     virtual uint8_t getRxCnt(uint8_t) const;
     uint8_t sendBool(uint8_t cmd, bool value, int attempts = SPI_PACKET_TRANSACTION_ATTEMPTS_NUMBER) const;

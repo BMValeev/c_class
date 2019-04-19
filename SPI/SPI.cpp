@@ -20,36 +20,24 @@
 // SPI class
 SPI* SPI::theOneTrueInstance = nullptr;
 
-/* Unsafe methods */
 SPI &SPI::getInstance()
 {
     if (theOneTrueInstance == nullptr) {
         // Allocate on heap so that it does not get destroyed after
         theOneTrueInstance = new SPI();
     }
-
     return *theOneTrueInstance;
 }
 
-SPI::SPI() : mCb(SPI::printToCout), mHardwareInitialized(false), mInit(false)
+SPI::SPI()
+    : Loggable()
+    , mInit(false)
+    , mHardwareInitialized(false)
 {
-    if (theOneTrueInstance != nullptr)
-        throw std::logic_error("Instance already exists");
+    printLog(DebugLog, static_cast<std::string>(__func__) + "SPI constructor called");
+    if (theOneTrueInstance != nullptr) throw std::logic_error("Instance already exists");
 
     theOneTrueInstance = this;
-}
-
-void SPI::printLog(uint8_t status, std::string text)
-{
-    if (mCb == nullptr)
-        return;
-
-    mCb(status, text);
-}
-
-void SPI::printToCout(uint8_t status, std::string msg)
-{
-    std::cout << status << msg << std::endl;
 }
 
 /* Used for configuration of the device in construction */
@@ -59,16 +47,16 @@ void SPI::setDeviceName(std::string name)
         return;
 
     mDeviceName = name;
-    printLog(Info_log, "SPI --> new device name set - " + mDeviceName);
+    printLog(InfoLog, "SPI --> new device name set - " + mDeviceName);
 }
 
-uint8_t SPI::begin(std::string device, LogCallback cb)/*Need to check*/
+uint8_t SPI::begin(std::string device, LogCallback cb) /*Need to check*/
 {
     // Lock the mutex first
     std::lock_guard<std::mutex> lock(mMutex); // automatically unlocks when function is leaved, no need to call unlock
 
     setLogCallback(cb);
-    printLog(Debug_log, static_cast<std::string>(__func__) + " started");
+    printLog(DebugLog, static_cast<std::string>(__func__) + " started");
 
     // Setups
     mLastRecMsg.reserve(SPI_RX_BUFFER_SIZE); // will always have fixed size
@@ -83,49 +71,49 @@ uint8_t SPI::begin(std::string device, LogCallback cb)/*Need to check*/
     mSpifd = -1;
     mSpifd = open(mDeviceName.c_str(), O_RDWR);
     if(mSpifd < 0){
-        printLog(Critical_log, static_cast<std::string>(__func__) + " could not open SPI device");
+        printLog(CriticalLog, static_cast<std::string>(__func__) + " could not open SPI device");
         return NOK_SPI;
     }
 
     int result = -1;
     result = ioctl(mSpifd, SPI_IOC_WR_MODE, &mMode);
     if(result < 0){
-        printLog(Critical_log,static_cast<std::string>(__func__) + " could not set SPIMode (WR)...ioctl fail");
+        printLog(CriticalLog,static_cast<std::string>(__func__) + " could not set SPIMode (WR)...ioctl fail");
         return NOK_SPI;
     }
 
     result = -1;
     result = ioctl(mSpifd, SPI_IOC_RD_MODE, &mMode);
     if(result < 0) {
-        printLog(Critical_log, static_cast<std::string>(__func__) + " could not set SPIMode (RD)...ioctl fail");
+        printLog(CriticalLog, static_cast<std::string>(__func__) + " could not set SPIMode (RD)...ioctl fail");
         return NOK_SPI;
     }
 
     result = -1;
     result = ioctl(mSpifd, SPI_IOC_WR_BITS_PER_WORD, &mBitsPerWord);
     if(result < 0) {
-        printLog(Critical_log,static_cast<std::string>(__func__) + " could not set SPI bitsPerWord (WR)...ioctl fail");
+        printLog(CriticalLog,static_cast<std::string>(__func__) + " could not set SPI bitsPerWord (WR)...ioctl fail");
         return NOK_SPI;
     }
 
     result = -1;
     result = ioctl(mSpifd, SPI_IOC_RD_BITS_PER_WORD, &mBitsPerWord);
     if(result < 0) {
-        printLog(Critical_log,static_cast<std::string>(__func__) + " could not set SPI bitsPerWord(RD)...ioctl fail");
+        printLog(CriticalLog,static_cast<std::string>(__func__) + " could not set SPI bitsPerWord(RD)...ioctl fail");
         return NOK_SPI;
     }
 
     result = -1;
     result = ioctl(mSpifd, SPI_IOC_WR_MAX_SPEED_HZ, &mSpeed);
     if(result < 0) {
-        printLog(Critical_log,static_cast<std::string>(__func__) + " could not set SPI speed (WR)...ioctl fail");
+        printLog(CriticalLog,static_cast<std::string>(__func__) + " could not set SPI speed (WR)...ioctl fail");
         return NOK_SPI;
     }
 
     result = -1;
     result = ioctl(mSpifd, SPI_IOC_RD_MAX_SPEED_HZ, &mSpeed);
     if(result < 0) {
-        printLog(Critical_log, static_cast<std::string>(__func__) + " could not set SPI speed (RD)...ioctl fail ");
+        printLog(CriticalLog, static_cast<std::string>(__func__) + " could not set SPI speed (RD)...ioctl fail ");
         return NOK_SPI;
     }
 
@@ -133,7 +121,7 @@ uint8_t SPI::begin(std::string device, LogCallback cb)/*Need to check*/
     mHardwareInitialized = true;
     mInit = true;
 
-    printLog(Debug_log, static_cast<std::string>(__func__)+ " ended succesfully");
+    printLog(DebugLog, static_cast<std::string>(__func__)+ " ended succesfully");
 
     return OK_SPI;
 }
@@ -143,8 +131,8 @@ uint8_t SPI::transaction(std::vector<uint8_t>& buffer, uint8_t ansLen) /*Need to
     // Lock the mutex first
     std::lock_guard<std::mutex> lock(mMutex); // automatically unlocks when function is leaved, no need to call unlock
 
-    printLog(Debug_log, static_cast<std::string>(__func__) + " started");
-    printLog(Debug_log, static_cast<std::string>(__func__) + std::to_string(buffer.size()));
+    printLog(DebugLog, static_cast<std::string>(__func__) + " started");
+    printLog(DebugLog, static_cast<std::string>(__func__) + std::to_string(buffer.size()));
 
     // uint8_t receive[ansLen];
     mLastRecMsg.resize(ansLen, 0);
@@ -179,7 +167,7 @@ uint8_t SPI::transaction(std::vector<uint8_t>& buffer, uint8_t ansLen) /*Need to
     result = ioctl(mSpifd, SPI_IOC_MESSAGE(2), &send);
     if(result < 0)
     {
-        printLog(Warning_log, static_cast<std::string>(__func__) + static_cast<std::string>(strerror(errno)) + " error ocurred during transmission" );
+        printLog(WarningLog, static_cast<std::string>(__func__) + static_cast<std::string>(strerror(errno)) + " error ocurred during transmission" );
         return NOK_SPI;
     }
     qWarning() << "received buffer = " << mLastRecMsg;
@@ -191,7 +179,7 @@ uint8_t SPI::transaction(std::vector<uint8_t>& buffer, uint8_t ansLen) /*Need to
         mLastRecMsg[i] = receive[i];
     }*/
 
-    printLog(Debug_log, static_cast<std::string>(__func__) + " ended succesfully");
+    printLog(DebugLog, static_cast<std::string>(__func__) + " ended succesfully");
     return OK_SPI;
 }
 

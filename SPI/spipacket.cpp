@@ -22,16 +22,6 @@ uint16_t SPIPacket::byteToLen(uint8_t byte)
     return (byte & 0x80)? (byte & 0x7F)*128 : (byte & 0x7F);
 }
 
-void SPIPacket::printLog(uint8_t status, std::string text) const
-{
-    if (mCb != nullptr) mCb(status,text);
-}
-
-void SPIPacket::printToCout(uint8_t status, std::string msg)
-{
-    std::cout << status << msg << std::endl;
-}
-
 uint8_t SPIPacket::getRxCnt(uint8_t) const
 {
     return 0;

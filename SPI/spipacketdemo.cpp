@@ -14,7 +14,7 @@ uint8_t SPIPacket::send(uint8_t cmd, std::vector<uint8_t> &payload, std::vector<
     std::ignore = payload;
     std::ignore = attempts;
     // This is DEMO branch
-    printLog(Debug_log, static_cast<std::string>(__func__) + " DEMO answer");
+    printLog(DebugLog, static_cast<std::string>(__func__) + " DEMO answer");
     answer.clear();
     if (cmd == MCU::REQUEST_STATUS) // answer to any command other than REQUEST_STATUS
     { // answer to REQUEST_STATUS

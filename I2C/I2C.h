@@ -4,7 +4,6 @@
 #ifndef C_CLASS_I2C_H
 #define C_CLASS_I2C_H
 
-
 #include <vector>
 #include <string>
 #include <cstring>
@@ -17,39 +16,48 @@
 #include <cstdlib>
 
 #include "../defs.h"
+#include "../Rest/loggable.h"
 
+#define ACK_I2C 0x06
+#define NACK_I2C 0x015
+#define BOF_I2C 0x20
+#define MSP_I2C 0x21
 
+#define OK_I2C 0x00
+#define NOK_I2C 0x01
 
-typedef std::function<void(uint8_t, std::string)> CallbackFunction;
-class I2C
+class I2C : public Loggable
 {
 public:
-    static I2C & getInstance(LogCallback cb=PrintToCout);
-    static void initInstance(LogCallback cb=PrintToCout);
-    unsigned int begin(std::string device);
-    unsigned int transaction(uint8_t address,std::vector<unsigned char> buffer, unsigned int len);
-    std::vector<unsigned char> recData(void);
-private:
+    static I2C & getInstance();
+
+    uint32_t begin(std::string device, LogCallback cb = printToCout);
+    std::vector<uint8_t> recData() { return mLastRecMsg; }
+    void cleanRecMsg() { mLastRecMsg.clear(); }
+    bool isInitialized() const { return theOneTrueInstance != nullptr; }
+
+    // Transmission
+    uint32_t transaction(uint8_t address, std::vector<uint8_t> buffer, uint32_t len);
 
 protected:
-    I2C(LogCallback cb=PrintToCout);
-    virtual ~I2C();
-    void CleanRecMsg(void);
-    virtual int SendPacket(uint8_t address,std::vector<unsigned char> buffer, unsigned int len);
-    const unsigned int MaxLen=40;
-    static void PrintToCout(uint8_t status, std::string msg);
-    int SendRaw_new(uint8_t address, std::vector<unsigned char> buffer, unsigned int rlen);
-    void PrintLog(uint8_t status, std::string text);
-    void SetDeviceName(std::string Name);
-    static I2C * theOneTrueInstance;
-    unsigned int MsgLen;
-    std::vector<unsigned char>  LastRecMsg;
-    LogCallback m_cb = I2C::PrintToCout;
-    int init=0;
-    std::mutex Mutex;
-    std::string DeviceName;
-    struct i2c_client *i2c_data;
-};
+    I2C();
+    ~I2C() { }
 
+private:
+    static I2C * theOneTrueInstance;
+    bool mInit;
+    std::string mDeviceName;
+    std::vector<uint8_t>  mLastRecMsg;
+    std::mutex mMutex;
+    const uint32_t mMaxLen;
+    uint32_t mMsgLen;
+    struct i2c_client *mI2CData;
+
+    // Helpers
+    virtual int sendPacket(uint8_t address,std::vector<uint8_t> buffer, uint32_t len);
+    void setDeviceName(std::string name);
+    int sendRawNew(uint8_t address, std::vector<uint8_t> buffer, uint32_t rlen);
+
+};
 
 #endif //C_CLASS_I2C_H

@@ -13,6 +13,7 @@
 #include <mutex>
 
 #include "../defs.h"
+#include "../Rest/loggable.h"
 
 #define ACK_SPI 0x30
 #define EXEC_SPI 0x03
@@ -20,6 +21,7 @@
 #define OK_SPI 0x00
 #define NACK 0x02
 #define NOK_SPI 0x01
+#define TR_ERR_SPI 0x05
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #define PACKED_LENGTH_SPI 32
 
@@ -41,15 +43,14 @@
 #endif
 
 // Low level class that implements basic information exchange via SPI on Hamming board
-class SPI
+class SPI : public Loggable
 {
 public:
     static SPI & getInstance();
 
-    uint8_t begin(std::string device, LogCallback cb);
-    std::vector<uint8_t> recData(void) const { return mLastRecMsg; }
+    uint8_t begin(std::string device, LogCallback cb = printToCout);
+    std::vector<uint8_t> recData() const { return mLastRecMsg; }
     void resetRecData() { std::fill(mLastRecMsg.begin(), mLastRecMsg.end(), 0); }
-    void setLogCallback(LogCallback cb) { mCb = cb; }
     bool isInitialized() const { return theOneTrueInstance != nullptr; }
     bool isHardwareInitialized() const { return mHardwareInitialized; }
 
@@ -62,7 +63,7 @@ protected:
 
 private:
     static SPI* theOneTrueInstance;
-    LogCallback mCb;
+    bool mInit;
     std::string mDeviceName;
     std::vector<uint8_t> mLastRecMsg;
     std::mutex mMutex;
@@ -71,11 +72,8 @@ private:
     bool mHardwareInitialized;
     uint8_t mMode;
     uint8_t mBitsPerWord;
-    bool mInit;
 
     // Helpers
-    void printLog(uint8_t status, std::string text);
-    static void printToCout(uint8_t status, std::string msg);
     void setDeviceName(std::string name);
 
 };

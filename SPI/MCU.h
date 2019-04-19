@@ -61,7 +61,6 @@ public:
         SET_IRRIGATION_CURRENT  = 0x19
     };
 
-
     // Common
     uint8_t setStanby(uint8_t status, int attempts = SPI_PACKET_TRANSACTION_ATTEMPTS_NUMBER) const;
     uint8_t checkStatus(std::vector<uint8_t> &answer, int attempts = SPI_PACKET_TRANSACTION_ATTEMPTS_NUMBER) const;

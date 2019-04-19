@@ -1,7 +1,7 @@
 /*
  *Created by eleps on 27.04.18.
  */
-using namespace std;
+
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -17,154 +17,135 @@ using namespace std;
 #include "I2C.h"
 
 // I2C class
-I2C* I2C::theOneTrueInstance;
+I2C* I2C::theOneTrueInstance = nullptr;
 
-// Construction and destruction
-I2C::I2C(LogCallback cb) {
-    this->m_cb=cb;
-    this->PrintLog(Debug_log,(std::string) __func__+  (std::string)"I2C constructor called");
+I2C& I2C::getInstance() {
+    if (theOneTrueInstance == nullptr) {
+        // Allocate on heap so that it does not get destroyed after
+        theOneTrueInstance = new I2C();
+    }
+    return *theOneTrueInstance;
+}
+
+I2C::I2C()
+    : Loggable ()
+    , mInit(false)
+    , mMaxLen(40)
+{
+    printLog(DebugLog, static_cast<std::string>(__func__) + "I2C constructor called");
     if (theOneTrueInstance) throw std::logic_error("Instance already exists");
     theOneTrueInstance = this;
 }
-I2C::~I2C() { }
-I2C& I2C::getInstance(LogCallback cb) {
-    if (!theOneTrueInstance) initInstance(cb);
-    return *theOneTrueInstance;
-}
-//void I2C::initInstance(CallbackFunction cb) { new I2C(cb); }
-void I2C::initInstance(LogCallback cb) { new I2C(cb); }
 
-std::vector<unsigned char> I2C::recData(void)
+void I2C::setDeviceName(std::string name)
 {
+    if (mDeviceName == name)
+        return;
 
-    return LastRecMsg;
+    printLog(DebugLog, static_cast<std::string>(__func__) + "Device name set to :" + name);
+    mDeviceName = name;
 }
-void I2C::CleanRecMsg(void)
+
+uint32_t I2C::begin(std::string device, LogCallback cb)
 {
-    /*
-         * Explicitly cleans last read buffer
-         */
-    this->LastRecMsg.clear();
-}
-void I2C::SetDeviceName(std::string Name)
-{
-    /*
-         * Used for configuration of the device in construction
-         */
-    PrintLog(Debug_log,(std::string) __func__+  (std::string)"Device name set to :" +(std::string)Name);
-    this->DeviceName=Name;
-}
-void I2C::PrintLog(uint8_t status, std::string text)
-{
-    if (this->m_cb!=nullptr)
-    {
-        m_cb(status,text);
+    // Lock the mutex first
+    std::lock_guard<std::mutex> lock(mMutex); // automatically unlocks when function is leaved, no need to call unlock
+
+    setLogCallback(cb);
+
+    if (mInit) {
+        printLog(InfoLog, static_cast<std::string>(__func__) + " I2C already initialized");
+        return NOK_I2C;
     }
-}
 
-void I2C::PrintToCout(uint8_t status, string msg)
-{
-    cout<<status<<msg<<endl;
+    cleanRecMsg();
+    printLog(DebugLog, static_cast<std::string>(__func__) + device);
+    setDeviceName(device);
+    printLog(DebugLog, static_cast<std::string>(__func__) + " Initialized");
+    mInit = true;
+
+    return OK_I2C;
 }
 
 /*Unsafe Methods*/
-int I2C::SendRaw_new(uint8_t address, std::vector<unsigned char> buffer, unsigned int rlen)
+int I2C::sendRawNew(uint8_t address, std::vector<uint8_t> buffer, uint32_t rlen)
 {
     int ret;
-    int errnum;
-    unsigned int cnt, cnt_all;
-    unsigned char buf_rec[40]={0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+    uint32_t cnt, cnt_all;
+    uint8_t buf_rec[40]={0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
             ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-    //unsigned char buf_rec[rlen];
-    //memset(&buf_rec, 0, sizeof(unsigned char)*rlen);
-    unsigned int flag=0;
+    //uint8_t buf_rec[rlen];
+    //memset(&buf_rec, 0, sizeof(uint8_t)*rlen);
     std::string data_send,data_rec;
     i2c_rdwr_ioctl_data message;
     memset(&message, 0, sizeof(message));
     i2c_msg message_packet[2];
-    PrintLog(Debug_log,(std::string) __func__+  (std::string)" Send message");
+    printLog(DebugLog, static_cast<std::string>(__func__) + " Send message");
     memset(&message_packet, 0, sizeof(i2c_msg)*2);
     message_packet[0].addr=address;
     message_packet[0].flags=0;
-    message_packet[0].len=buffer.size();
+    message_packet[0].len = static_cast<uint16_t>(buffer.size());
     message_packet[0].buf=buffer.data();
     message_packet[1].addr=address;
     message_packet[1].flags=I2C_M_RD;//I2C_M_RD|I2C_M_RECV_LEN;I2C_M_NOSTART
     message_packet[1].buf=buf_rec;
     message_packet[1].len=10;
-    message_packet[1].len= (rlen==0)?10:rlen;
+    message_packet[1].len = static_cast<uint16_t>((rlen==0)? 10 : rlen);
     cnt_all= (rlen==0)?10:rlen;
     message.msgs=message_packet;
     message.nmsgs =(rlen!=0) ?  2:1;
-    int file = open(this->DeviceName.c_str(), O_RDWR);
+    int file = open(mDeviceName.c_str(), O_RDWR);
     if (file == -1) {
-        PrintLog(Warning_log,(std::string) __func__+  (std::string)"Device open error");
+        printLog(WarningLog,static_cast<std::string>(__func__) + "Device open error");
         close(file);
         return NOK_I2C;
     }
     if (ioctl(file, I2C_SLAVE, address) < 0) {
-        PrintLog(Warning_log,(std::string) __func__+  (std::string)"Failed to acquire bus access and/or talk to slave");
+        printLog(WarningLog,static_cast<std::string>(__func__) + "Failed to acquire bus access and/or talk to slave");
         close(file);
         return NOK_I2C;
     }
     ret=ioctl(file, I2C_RDWR, &message);
     if (ret<0) {
-        PrintLog(Warning_log,(std::string) __func__+  (std::string)strerror(-ret)
-                             +(std::string)"Unable to send message");
+        printLog(WarningLog,static_cast<std::string>(__func__) + strerror(-ret) + "Unable to send message");
         fprintf (stderr, "%s.\n", strerror(-ret));
         close(file);
         return NOK_I2C;
     }
     close(file);
-    CleanRecMsg();
+    cleanRecMsg();
     for (cnt = 0; cnt < (cnt_all); cnt++) {
-        this->LastRecMsg.push_back(buf_rec[cnt]);
+        mLastRecMsg.push_back(buf_rec[cnt]);
     }
-    PrintLog(Debug_log,(std::string) __func__+  (std::string)" Send message");
+    printLog(DebugLog,static_cast<std::string>(__func__) + " Send message");
     return OK_I2C;
 }
 /*
  *     if (flag){
-        cnt_all=cnt_all-this->LastRecMsg.front();
+        cnt_all=cnt_all-LastRecMsg.front();
         while (--cnt_all) {
-            this->LastRecMsg.pop_back();
+            LastRecMsg.pop_back();
         }
     }
  */
 
-int I2C::SendPacket(uint8_t address,std::vector<unsigned char> buffer, unsigned int len)
+int I2C::sendPacket(uint8_t address,std::vector<uint8_t> buffer, uint32_t len)
 {
-    std::vector<unsigned char> package;
-    for(unsigned int i=0;i<buffer.size();i++) {
+    std::vector<uint8_t> package;
+    for(uint32_t i=0;i<buffer.size();i++) {
         package.push_back(buffer[i]);
     }
-    CleanRecMsg();
-    return (SendRaw_new(address, package,len)) ?NOK_I2C:OK_I2C;
+    cleanRecMsg();
+    return (sendRawNew(address, package,len)) ? NOK_I2C : OK_I2C;
 }
 
-unsigned int I2C::begin(std::string device)
+uint32_t I2C::transaction(uint8_t address,std::vector<uint8_t> buffer, uint32_t len)
 {
-    this->Mutex.lock();
-    if (this->init==1) {
-        PrintLog(Info_log,"I2C initialized");
-        this->Mutex.unlock();
-        return 1;
-    }
-    CleanRecMsg();
-    std::cout << device;
-    SetDeviceName(device);
-    PrintLog(Debug_log,(std::string) __func__ +(std::string)"Initialized");
-    this->init=1;
-    this->Mutex.unlock();
-    return 0;
-}
-unsigned int I2C::transaction(uint8_t address,std::vector<unsigned char> buffer, unsigned int len)
-{
-    this->Mutex.lock();
-    if (SendPacket(address,buffer,len)) {
-        this->Mutex.unlock();
+    mMutex.lock();
+    if (sendPacket(address,buffer,len)) {
+        mMutex.unlock();
         return NOK_I2C;
     }
-    this->Mutex.unlock();
+    mMutex.unlock();
     return OK_I2C;
 }

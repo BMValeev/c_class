@@ -6,20 +6,20 @@
 #define C_CLASS_BOARDMODULE_H
 
 #include "../defs.h"
+#include "../Rest/loggable.h"
 #include <vector>
 
 #define BOARD_MODULE_ADDRESS 0x40
 #define BOARD_MODULE_PACKET_TRANSACTION_ATTEMPTS_NUMBER 3
 
-class BoardModule
+class BoardModule : public Loggable
 {
 public:
     BoardModule(std::string filename, LogCallback cb = printToCout) ;
-    ~BoardModule() { }
 
     // Address
-    uint8_t getAddress();
-    void setAddress(uint8_t mAddr);
+    uint8_t getAddress() const { return mAddr; }
+    void setAddress(uint8_t addr) { mAddr = addr & 0x7f; }
     // Commands
     uint8_t getVersion(std::vector<uint8_t> &response);
     uint8_t setBonding(uint8_t enable,std::vector<uint8_t> &response);
@@ -30,11 +30,10 @@ public:
 
 
 private:
-    LogCallback mCb;
-    uint16_t mAttempts = 3;
     uint8_t mAddr;
+    uint16_t mAttempts;
+
+    // Helpers
     std::vector<uint8_t> writeArray(uint8_t command,std::vector<uint8_t> data, uint32_t len);
-    void printLog(uint8_t status, std::string text);
-    static void printToCout(uint8_t status, std::string msg);
 };
 #endif //C_CLASS_BOARDMODULE_H

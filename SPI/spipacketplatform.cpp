@@ -12,7 +12,7 @@
 #include "MCU.h" // this is only for debug mode to form answer, probably remove later
 
 SPIPacket::SPIPacket(std::string deviceName, LogCallback cb)
-    : mCb(cb)
+    : Loggable(cb)
     , mDeviceName(deviceName)
 {
     SPI::getInstance().begin(deviceName, cb);
@@ -25,7 +25,7 @@ uint8_t SPIPacket::send(uint8_t cmd, std::vector<uint8_t> &payload, std::vector<
 
     while(attempts--)
     {
-        printLog(Debug_log, static_cast<std::string>(__func__) + " transactions left: " + std::to_string(attempts));
+        printLog(DebugLog, static_cast<std::string>(__func__) + " transactions left: " + std::to_string(attempts));
 
         // Send message
         if (transaction(cmd, payload, answer, rxLen) != OK_SPI)
@@ -55,7 +55,7 @@ uint8_t SPIPacket::send(uint8_t cmd, std::vector<uint8_t> &payload, std::vector<
 
         // Acknowledged & executed
         answer.erase(answer.begin()); // Remove acknowledge byte
-        printLog(Debug_log, static_cast<std::string>(__func__) + " - success");
+        printLog(DebugLog, static_cast<std::string>(__func__) + " - success");
         return OK_SPI;
     }
     return TR_ERR_SPI;
@@ -65,7 +65,7 @@ uint8_t SPIPacket::transaction(uint8_t cmd, std::vector<uint8_t> &txMsg, std::ve
 {
     assert(txMsg.size() < SPI_PACKET_MAX_TX_SIZE);
 
-    printLog(Debug_log, static_cast<std::string>(__func__) + " started");
+    printLog(DebugLog, static_cast<std::string>(__func__) + " started");
 
     // If the msg is less than 128 bytes, just use it's length
     // If the msg is larger, set length to multiples of 128
@@ -88,7 +88,7 @@ uint8_t SPIPacket::transaction(uint8_t cmd, std::vector<uint8_t> &txMsg, std::ve
 
     // Check if transmission was sucessfull
     if (r != OK_SPI) {
-        printLog(Warning_log, static_cast<std::string>(__func__) + ": Packet not send");
+        printLog(WarningLog, static_cast<std::string>(__func__) + ": Packet not send");
         return NOK_SPI;
     }
 
@@ -97,11 +97,11 @@ uint8_t SPIPacket::transaction(uint8_t cmd, std::vector<uint8_t> &txMsg, std::ve
     // Compute CRC over all received message including CRC itself - should equal 0
     if(CRC::crc8(rxMsg.data(),rxMsg.size()))
     {
-        printLog(Warning_log, static_cast<std::string>(__func__) + ": CRC error");
+        printLog(WarningLog, static_cast<std::string>(__func__) + ": CRC error");
         return NOK_SPI;
     }
 
     rxMsg.pop_back();
-    printLog(Debug_log, static_cast<std::string>(__func__) + " ended succesfully");
+    printLog(DebugLog, static_cast<std::string>(__func__) + " ended succesfully");
     return OK_SPI;
 }

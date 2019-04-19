@@ -6,21 +6,21 @@
 #define C_CLASS_CONNMODULE_H
 
 #include "../defs.h"
+#include "../Rest/loggable.h"
 #include <vector>
 #include <map>
 
 #define CONN_MODULE_ADDRESS 0x70
 #define CONN_MODULE_PACKET_TRANSACTION_ATTEMPTS_NUMBER 3
 
-class ConnModule
+class ConnModule : public Loggable
 {
 public:
     ConnModule(std::string filename, LogCallback cb = printToCout);
-    ~ConnModule() { }
 
     // Address
     uint8_t getAddress() const { return mAddr; }
-    void setAddress(uint8_t mAddr);
+    void setAddress(uint8_t addr) { mAddr = addr & 0x7f; }
     // Commands
     uint8_t setUUID(uint32_t uuid, std::vector<uint8_t> &response);
     uint8_t setName(std::vector<uint8_t> data, std::vector<uint8_t> &response);
@@ -34,13 +34,10 @@ public:
     uint8_t readLastChangedValue(std::map<uint16_t, std::vector<uint8_t> > &answer);
 
 private:
-    LogCallback mCb;
-    uint16_t mAttempts;
     uint8_t mAddr;
+    uint16_t mAttempts;
 
     // Helpers
     std::vector<uint8_t> writeArray(uint8_t command,std::vector<uint8_t> data, uint32_t len);
-    void printLog(uint8_t status, std::string text);
-    static void printToCout(uint8_t status, std::string msg);
 };
 #endif //C_CLASS_CONNMODULE_H

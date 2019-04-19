@@ -9,18 +9,13 @@
 
 // ConnModule class
 // Construction and destruction
-ConnModule::ConnModule(std::string filename, CallbackFunction cb)
-    : mCb(cb)
-    , mAttempts(CONN_MODULE_PACKET_TRANSACTION_ATTEMPTS_NUMBER)
+ConnModule::ConnModule(std::string filename, LogCallback cb)
+    : Loggable(cb)
     , mAddr(CONN_MODULE_ADDRESS)
+    , mAttempts(CONN_MODULE_PACKET_TRANSACTION_ATTEMPTS_NUMBER)
 {
-    I2C &i2c = I2C::getInstance(cb);
-    i2c.begin(filename);
-}
-
-void ConnModule::setAddress(uint8_t addr)
-{
-    mAddr = addr & 0x7f;
+    I2C &i2c = I2C::getInstance();
+    i2c.begin(filename, cb);
 }
 
 uint8_t ConnModule::setUUID(uint32_t uuid, std::vector<uint8_t> &response)
@@ -35,93 +30,98 @@ uint8_t ConnModule::setUUID(uint32_t uuid, std::vector<uint8_t> &response)
     response=writeArray(0x01, uuid_b, 3);
     if (response.size()!=1)
     {
-        printLog(Debug_log,static_cast<std::string>(__func__) + "Set UUID failed");
+        printLog(DebugLog, static_cast<std::string>(__func__) + "Set UUID failed");
         return NOK_I2C;
     }
     if (response.front()==ACK_I2C)
     {
-        printLog(Debug_log,static_cast<std::string>(__func__) + "Set UUID succesfuly");
+        printLog(DebugLog, static_cast<std::string>(__func__) + "Set UUID succesfuly");
         return OK_I2C;
     }
-    printLog(Debug_log,static_cast<std::string>(__func__) + "Set UUID failed, NACK");
+    printLog(DebugLog, static_cast<std::string>(__func__) + "Set UUID failed, NACK");
     return NOK_I2C;
 }
+
 uint8_t ConnModule::setName(std::vector<uint8_t> data, std::vector<uint8_t> &response)
 {
     response=writeArray(0x02, data, 3);
     if (response.size()!=1)
     {
-        printLog(Debug_log,static_cast<std::string>(__func__) + "Set SetName failed");
+        printLog(DebugLog, static_cast<std::string>(__func__) + "Set SetName failed");
         return NOK_I2C;
     }
     if (response.front()==ACK_I2C)
     {
-        printLog(Debug_log,static_cast<std::string>(__func__) + "Set SetName succesfuly");
+        printLog(DebugLog, static_cast<std::string>(__func__) + "Set SetName succesfuly");
         return OK_I2C;
     }
-    printLog(Debug_log,static_cast<std::string>(__func__) + "Set SetName failed, NACK");
+    printLog(DebugLog, static_cast<std::string>(__func__) + "Set SetName failed, NACK");
     return NOK_I2C;
 }
+
 uint8_t ConnModule::startInit(std::vector<uint8_t> &response)
 {
     std::vector<uint8_t> data;
     response=writeArray(0x03, data, 3);
     if (response.size()!=1)
     {
-        printLog(Debug_log,static_cast<std::string>(__func__) + "StartInit failed");
+        printLog(DebugLog, static_cast<std::string>(__func__) + "StartInit failed");
         return NOK_I2C;
     }
     if (response.front()==ACK_I2C)
     {
-        printLog(Debug_log,static_cast<std::string>(__func__) + "StartInit succesfuly");
+        printLog(DebugLog, static_cast<std::string>(__func__) + "StartInit succesfuly");
         return OK_I2C;
     }
-    printLog(Debug_log,static_cast<std::string>(__func__) + "StartInit failed, NACK");
+    printLog(DebugLog, static_cast<std::string>(__func__) + "StartInit failed, NACK");
     return NOK_I2C;
 }
+
 uint8_t ConnModule::writeString(std::vector<uint8_t> data, std::vector<uint8_t> &response)
 {
     response=writeArray(0x04, data, 3);
     if (response.size()!=1)
     {
-        printLog(Debug_log,static_cast<std::string>(__func__) + "WriteString failed");
+        printLog(DebugLog, static_cast<std::string>(__func__) + "WriteString failed");
         return NOK_I2C;
     }
     if (response.front()==ACK_I2C)
     {
-        printLog(Debug_log,static_cast<std::string>(__func__) + "WriteString succesfuly");
+        printLog(DebugLog, static_cast<std::string>(__func__) + "WriteString succesfuly");
         return OK_I2C;
     }
-    printLog(Debug_log,static_cast<std::string>(__func__) + "WriteString failed, NACK");
+    printLog(DebugLog, static_cast<std::string>(__func__) + "WriteString failed, NACK");
     return NOK_I2C;
 }
+
 uint8_t ConnModule::endInit(std::vector<uint8_t> &response)
 {
     std::vector<uint8_t> data;
     response=writeArray(0x05, data, 3);
     if (response.size()!=1)
     {
-        printLog(Debug_log,static_cast<std::string>(__func__) + "EndInit failed");
+        printLog(DebugLog, static_cast<std::string>(__func__) + "EndInit failed");
         return NOK_I2C;
     }
     if (response.front()==ACK_I2C)
     {
-        printLog(Debug_log,static_cast<std::string>(__func__) + "EndInit succesfuly");
+        printLog(DebugLog, static_cast<std::string>(__func__) + "EndInit succesfuly");
         return OK_I2C;
     }
-    printLog(Debug_log,static_cast<std::string>(__func__) + "EndInit failed, NACK");
+    printLog(DebugLog, static_cast<std::string>(__func__) + "EndInit failed, NACK");
     return NOK_I2C;
 }
+
 uint8_t ConnModule::checkBonding(std::vector<uint8_t> &response)
 {
     std::vector<uint8_t> data;
     response=writeArray(0x09, data, 3);
     if (response.size()!=1)
     {
-        printLog(Debug_log,static_cast<std::string>(__func__) + "CheckBonding failed");
+        printLog(DebugLog, static_cast<std::string>(__func__) + "CheckBonding failed");
         return NOK_I2C;
     }
-    printLog(Debug_log,static_cast<std::string>(__func__) + "CheckBonding failed succesfuly");
+    printLog(DebugLog, static_cast<std::string>(__func__) + "CheckBonding failed succesfuly");
     return OK_I2C;
 }
 
@@ -133,33 +133,35 @@ uint8_t ConnModule::writeValue(std::vector<uint8_t> id, std::vector<uint8_t> val
     response=writeArray(0x06, data, 3);
     if (response.size()!=1)
     {
-        printLog(Debug_log,static_cast<std::string>(__func__) + "WriteValue failed, wrong responce");
+        printLog(DebugLog, static_cast<std::string>(__func__) + "WriteValue failed, wrong responce");
         return NOK_I2C;
     }
     if (response.front()==ACK_I2C)
     {
-        printLog(Debug_log,static_cast<std::string>(__func__) + "WriteValue succesfuly");
+        printLog(DebugLog, static_cast<std::string>(__func__) + "WriteValue succesfuly");
         return OK_I2C;
     }
-    printLog(Debug_log,static_cast<std::string>(__func__) + "WriteValue failed, NACK");
+    printLog(DebugLog, static_cast<std::string>(__func__) + "WriteValue failed, NACK");
     return NOK_I2C;
 }
+
 uint8_t ConnModule::startBonding(std::vector<uint8_t> db, std::vector<uint8_t> &response)
 {
     response=writeArray(0x08, db, 3);
     if (response.size()!=1)
     {
-        printLog(Debug_log,static_cast<std::string>(__func__) + "StartBonding failed");
+        printLog(DebugLog, static_cast<std::string>(__func__) + "StartBonding failed");
         return NOK_I2C;
     }
     if (response.front()==ACK_I2C)
     {
-        printLog(Debug_log,static_cast<std::string>(__func__) + "StartBonding succesfuly");
+        printLog(DebugLog, static_cast<std::string>(__func__) + "StartBonding succesfuly");
         return OK_I2C;
     }
-    printLog(Debug_log,static_cast<std::string>(__func__) + "StartBonding failed");
+    printLog(DebugLog, static_cast<std::string>(__func__) + "StartBonding failed");
     return NOK_I2C;
 }
+
 uint8_t ConnModule::readValue(uint16_t id_rec, std::map<uint16_t,std::vector<uint8_t>> answer) /*change order of message*/
 {
     std::vector<uint8_t> responce;
@@ -171,12 +173,12 @@ uint8_t ConnModule::readValue(uint16_t id_rec, std::map<uint16_t,std::vector<uin
     responce=writeArray(0x07, data, 8);
     if (responce.size()==0)
     {
-        printLog(Debug_log,static_cast<std::string>(__func__) + "ReadValue failed");
+        printLog(DebugLog, static_cast<std::string>(__func__) + "ReadValue failed");
         return NOK_I2C;
     }
     if (responce.size()%4)
     {
-        printLog(Debug_log,static_cast<std::string>(__func__) + "ReadValue failed");
+        printLog(DebugLog, static_cast<std::string>(__func__) + "ReadValue failed");
         return NOK_I2C;
     }
     /*id=responce.front()<<8;
@@ -193,7 +195,7 @@ uint8_t ConnModule::readValue(uint16_t id_rec, std::map<uint16_t,std::vector<uin
     val.push_back(responce.front());
     responce.erase(responce.begin());
     answer.insert (std::pair<uint16_t,std::vector<uint8_t>>(id_rec,val));
-    printLog(Debug_log,static_cast<std::string>(__func__) + "ReadValue succesfuly");
+    printLog(DebugLog, static_cast<std::string>(__func__) + "ReadValue succesfuly");
     return OK_I2C;
 
 }
@@ -210,7 +212,7 @@ uint8_t ConnModule::readLastChangedValue(std::map<uint16_t,std::vector<uint8_t>>
     }
     if (response.size()%6)
     {
-        printLog(Debug_log,static_cast<std::string>(__func__) + "ReadLastChangedValue failed");
+        printLog(DebugLog, static_cast<std::string>(__func__) + "ReadLastChangedValue failed");
         return NOK_I2C;
     }
     while(response.size()!=0)
@@ -232,7 +234,7 @@ uint8_t ConnModule::readLastChangedValue(std::map<uint16_t,std::vector<uint8_t>>
         response.erase(response.begin());
         answer.insert(std::pair<uint16_t,std::vector<uint8_t>>(id,val) );
     }
-    printLog(Debug_log,static_cast<std::string>(__func__) + "ReadLastChangedValue succesfuly");
+    printLog(DebugLog, static_cast<std::string>(__func__) + "ReadLastChangedValue succesfuly");
     return OK_I2C;
 }
 
@@ -262,13 +264,13 @@ std::vector<uint8_t> ConnModule::writeArray(uint8_t command,std::vector<uint8_t>
                 answer.erase(answer.begin());
             }
             if (CRC::crc8(l_answer.data(),l_answer.size()-1)==l_answer.back()) {
-                printLog(Debug_log, static_cast<std::string>(__func__) + "CRC Ok");
+                printLog(DebugLog, static_cast<std::string>(__func__) + "CRC Ok");
                 l_answer.erase(l_answer.begin());
                 l_answer.erase(l_answer.begin());
                 l_answer.pop_back();
                 return l_answer;
             }
-            printLog(Debug_log, static_cast<std::string>(__func__) + "CRC NOK");
+            printLog(DebugLog, static_cast<std::string>(__func__) + "CRC NOK");
         }
     }
     if (command==0x0C) {
@@ -277,18 +279,9 @@ std::vector<uint8_t> ConnModule::writeArray(uint8_t command,std::vector<uint8_t>
     }
     return null;
 }
-void ConnModule::printLog(uint8_t status, std::string text)
-{
-    if (mCb != nullptr) mCb(status,text);
-}
-
-void ConnModule::printToCout(uint8_t status, std::string msg)
-{
-    std::cout << status << msg << std::endl;
-}
 
 #ifdef C_CLASS_DEBUG
-void PrintToC(uint8_t status, string msg)
+void printToC(uint8_t status, std::string msg)
 {
     std::cout << status << msg << std::endl;
 }
@@ -296,7 +289,7 @@ int main(void)
 {
     std::string filename="/dev/i2c-2";
     std::cout<<"1"<<std::endl;
-    ConnModule mcu(filename,PrintToC);
+    ConnModule mcu(filename,printToC);
     std::cout<<"2"<<std::endl;
     std::vector<uint8_t> data;
     mcu.StartInit(data);
