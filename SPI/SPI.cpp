@@ -15,8 +15,6 @@
 
 #include "../Rest/crc.h"
 
-#include <QDebug> // Remove this!!!
-
 // SPI class
 SPI* SPI::theOneTrueInstance = nullptr;
 
@@ -170,7 +168,6 @@ uint8_t SPI::transaction(std::vector<uint8_t>& buffer, uint8_t ansLen, uint16_t 
         printLog(WarningLog, static_cast<std::string>(__func__) + static_cast<std::string>(strerror(errno)) + " error ocurred during transmission" );
         return NOK_SPI;
     }
-    qWarning() << "received buffer = " << mLastRecMsg;
 
     printLog(DebugLog, static_cast<std::string>(__func__) + " ended succesfully");
     return OK_SPI;
