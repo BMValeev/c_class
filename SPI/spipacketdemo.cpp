@@ -9,10 +9,15 @@ SPIPacket::SPIPacket(std::string deviceName, LogCallback cb)
     , mDeviceName(deviceName)
 { }
 
-uint8_t SPIPacket::send(uint8_t cmd, std::vector<uint8_t> &payload, std::vector<uint8_t> &answer, int attempts) const
+uint8_t SPIPacket::send(uint8_t cmd,
+                        std::vector<uint8_t> &payload,
+                        std::vector<uint8_t> &answer,
+                        int attempts,
+                        uint16_t pause) const
 {
     std::ignore = payload;
     std::ignore = attempts;
+    std::ignore = pause;
     // This is DEMO branch
     printLog(DebugLog, static_cast<std::string>(__func__) + " DEMO answer");
     answer.clear();
@@ -24,12 +29,17 @@ uint8_t SPIPacket::send(uint8_t cmd, std::vector<uint8_t> &payload, std::vector<
     return OK_SPI;
 }
 
-uint8_t SPIPacket::transaction(uint8_t cmd, std::vector<uint8_t> &txMsg, std::vector<uint8_t> &rxMsg, uint8_t rxLen) const
+uint8_t SPIPacket::transaction(uint8_t cmd,
+                               std::vector<uint8_t> &txMsg,
+                               std::vector<uint8_t> &rxMsg,
+                               uint8_t rxLen,
+                               uint16_t pause) const
 {
     std::ignore = cmd;
     std::ignore = txMsg;
     std::ignore = rxMsg;
     std::ignore = rxLen;
+    std::ignore = pause;
     assert(txMsg.size() < SPI_PACKET_MAX_TX_SIZE);
     return OK_SPI;
 }

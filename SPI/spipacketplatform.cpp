@@ -18,7 +18,11 @@ SPIPacket::SPIPacket(std::string deviceName, LogCallback cb)
     SPI::getInstance().begin(deviceName, cb);
 }
 
-uint8_t SPIPacket::send(uint8_t cmd, std::vector<uint8_t> &payload, std::vector<uint8_t> &answer, int attempts) const
+uint8_t SPIPacket::send(uint8_t cmd,
+                        std::vector<uint8_t> &payload,
+                        std::vector<uint8_t> &answer,
+                        int attempts,
+                        uint16_t pause) const
 {
     // Get answer length
     uint8_t rxLen = getRxCnt(cmd);
@@ -28,7 +32,7 @@ uint8_t SPIPacket::send(uint8_t cmd, std::vector<uint8_t> &payload, std::vector<
         printLog(DebugLog, static_cast<std::string>(__func__) + " transactions left: " + std::to_string(attempts));
 
         // Send message
-        if (transaction(cmd, payload, answer, rxLen) != OK_SPI)
+        if (transaction(cmd, payload, answer, rxLen, pause) != OK_SPI)
             continue;
 
         if (answer.size() != rxLen-1)
@@ -48,9 +52,8 @@ uint8_t SPIPacket::send(uint8_t cmd, std::vector<uint8_t> &payload, std::vector<
                 {
                     return NOK_SPI; // not executed
                 }
-            } else {
+            } else
                 continue;
-            }
         }
 
         // Acknowledged & executed
@@ -61,7 +64,11 @@ uint8_t SPIPacket::send(uint8_t cmd, std::vector<uint8_t> &payload, std::vector<
     return TR_ERR_SPI;
 }
 
-uint8_t SPIPacket::transaction(uint8_t cmd, std::vector<uint8_t> &txMsg, std::vector<uint8_t> &rxMsg, uint8_t rxLen) const
+uint8_t SPIPacket::transaction(uint8_t cmd,
+                               std::vector<uint8_t> &txMsg,
+                               std::vector<uint8_t> &rxMsg,
+                               uint8_t rxLen,
+                               uint16_t pause) const
 {
     assert(txMsg.size() < SPI_PACKET_MAX_TX_SIZE);
 
@@ -70,7 +77,7 @@ uint8_t SPIPacket::transaction(uint8_t cmd, std::vector<uint8_t> &txMsg, std::ve
     // If the msg is less than 128 bytes, just use it's length
     // If the msg is larger, set length to multiples of 128
     uint64_t txLen = txMsg.size() + 3;
-    uint64_t txFullLen = txLen < 128? txLen : 128*(txLen/128 + txLen%128? 1 : 0);
+    uint64_t txFullLen = txLen < 128? txLen : 128*(txLen/128 + (txLen%128? 1 : 0));
 
     // Allocate transmit buffer
     std::vector<uint8_t> tx_buffer(txFullLen,0); // already initialized to 0
@@ -84,7 +91,7 @@ uint8_t SPIPacket::transaction(uint8_t cmd, std::vector<uint8_t> &txMsg, std::ve
     tx_buffer[txFullLen - 1] = CRC::crc8(tx_buffer.data(), txFullLen - 1);
 
     // Send
-    uint8_t r = SPI::getInstance().transaction(tx_buffer, rxLen);
+    uint8_t r = SPI::getInstance().transaction(tx_buffer, rxLen, pause);
 
     // Check if transmission was sucessfull
     if (r != OK_SPI) {

@@ -27,7 +27,7 @@
 
 // SPI Settings
 #ifndef SPI_SPEED_HZ
-    #define SPI_SPEED_HZ 1000000
+    #define SPI_SPEED_HZ 100000
 #endif
 #ifndef SPI_BITS_PER_WORD
     #define SPI_BITS_PER_WORD 8
@@ -55,7 +55,7 @@ public:
     bool isHardwareInitialized() const { return mHardwareInitialized; }
 
     // Transmission
-    uint8_t transaction(std::vector<uint8_t> &buffer, uint8_t ansLen);
+    uint8_t transaction(std::vector<uint8_t> &buffer, uint8_t ansLen, uint16_t pause = SPI_TX_RX_PAUSE_US);
 
 protected:
     SPI();

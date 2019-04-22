@@ -13,7 +13,7 @@
 
 uint8_t SPIPacket::lenToByte(uint64_t len)
 {
-    return (len > 127)? static_cast<uint8_t>( len/128 + len%128? 1 : 0)
+    return (len > 127)? static_cast<uint8_t>( (len/128 + (len%128? 1 : 0)) | 0x80)
                       : static_cast<uint8_t>(len);
 }
 

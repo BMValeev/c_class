@@ -126,7 +126,7 @@ uint8_t SPI::begin(std::string deviceName, LogCallback cb) /*Need to check*/
     return OK_SPI;
 }
 
-uint8_t SPI::transaction(std::vector<uint8_t>& buffer, uint8_t ansLen) /*Need to check*/
+uint8_t SPI::transaction(std::vector<uint8_t>& buffer, uint8_t ansLen, uint16_t pause) /*Need to check*/
 {
     // Lock the mutex first
     std::lock_guard<std::mutex> lock(mMutex); // automatically unlocks when function is leaved, no need to call unlock
@@ -142,7 +142,7 @@ uint8_t SPI::transaction(std::vector<uint8_t>& buffer, uint8_t ansLen) /*Need to
     send[0].tx_buf = reinterpret_cast<unsigned long>(buffer.data());
     send[0].rx_buf = reinterpret_cast<unsigned long>(nullptr);
     send[0].len = static_cast<unsigned int>(buffer.size());
-    send[0].delay_usecs = SPI_TX_RX_PAUSE_US;
+    send[0].delay_usecs = pause;
     send[0].speed_hz = mSpeed;
     send[0].bits_per_word = mBitsPerWord;
     send[0].tx_nbits = 0;
@@ -171,13 +171,6 @@ uint8_t SPI::transaction(std::vector<uint8_t>& buffer, uint8_t ansLen) /*Need to
         return NOK_SPI;
     }
     qWarning() << "received buffer = " << mLastRecMsg;
-
-    // ToDo: maybe it is possible to just pass pointer mLastRecMsg.data() to structure above, to avoid copying
-    /* resetRecData();
-    for (int i = 0; i < ansLen; i++)
-    {
-        mLastRecMsg[i] = receive[i];
-    }*/
 
     printLog(DebugLog, static_cast<std::string>(__func__) + " ended succesfully");
     return OK_SPI;

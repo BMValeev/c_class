@@ -6,6 +6,7 @@
 #include "../defs.h"
 #include "../Rest/crc.h"
 #include "../Rest/loggable.h"
+#include "../SPI/SPI.h"
 
 #define SPI_PACKET_MAX_TX_SIZE 16384
 #define SPI_PACKET_TRANSACTION_ATTEMPTS_NUMBER 3
@@ -35,9 +36,9 @@ protected:
     uint8_t send2Uint8(uint8_t cmd, uint8_t value1, uint8_t value2, int attempts = SPI_PACKET_TRANSACTION_ATTEMPTS_NUMBER) const;
     uint8_t send1Uint16(uint8_t cmd, uint16_t value, int attempts = SPI_PACKET_TRANSACTION_ATTEMPTS_NUMBER) const;
     uint8_t send2Uint16(uint8_t cmd, uint16_t value1, uint16_t value2, int attempts = SPI_PACKET_TRANSACTION_ATTEMPTS_NUMBER) const;
-    uint8_t send(uint8_t cmd, std::vector<uint8_t>& txMsg, std::vector<uint8_t>& answer, int attempts) const;
+    uint8_t send(uint8_t cmd, std::vector<uint8_t>& txMsg, std::vector<uint8_t>& answer, int attempts, uint16_t pause = SPI_TX_RX_PAUSE_US) const;
     // SPI is only used in this function, so possible to reimplement over another protocol
-    uint8_t transaction(uint8_t cmd, std::vector<uint8_t>& txMsg, std::vector<uint8_t>& rxMsg, uint8_t rxLen) const;
+    uint8_t transaction(uint8_t cmd, std::vector<uint8_t>& txMsg, std::vector<uint8_t>& rxMsg, uint8_t rxLen, uint16_t pause = SPI_TX_RX_PAUSE_US) const;
 
 };
 

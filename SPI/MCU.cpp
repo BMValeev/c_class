@@ -85,7 +85,7 @@ uint8_t MCU::writeCallibrCharacteristic(uint8_t connector,
     payload.push_back((crc16 & 0xFF00) >> 8); // Extract the MSB
     payload.resize(payloadLen,0); // padding with 0s
 
-    return send(WRITE_CALLIBR_CHARACT, payload, answer, attempts);
+    return send(WRITE_CALLIBR_CHARACT, payload, answer, attempts, 6);
 }
 
 uint8_t MCU::setPower(uint16_t cutPower, uint16_t coagPower, int attempts) const
@@ -152,7 +152,7 @@ uint8_t MCU::setLoadCharacteristic(bool isCut, std::vector<uint16_t> &loadCharDa
     payload.push_back((crc16 & 0xFF00) >> 8); // Extract the MSB
     payload.resize(payloadLen,0); // padding with 0s
 
-    return send(SET_LOAD_CHARACT, payload, answer, attempts);
+    return send(SET_LOAD_CHARACT, payload, answer, attempts, 6);
 }
 
 uint8_t MCU::setStartVoltageLevel(uint8_t cutLevel, uint8_t coagLevel, int attempts) const

@@ -45,5 +45,10 @@ std::vector<uint8_t> I2CPacket::writeArray(uint8_t cmd, std::vector<uint8_t> dat
             printLog(DebugLog, static_cast<std::string>(__func__) + "CRC NOK");
         }
     }
+    // What is this?
+    if (cmd == 0x0C) {
+        null.push_back('c');
+        return null;
+    }
     return null;
 }
