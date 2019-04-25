@@ -90,8 +90,9 @@ public:
         TERMU,
         AUTOSTOP,
         AUTOSTART,
-        PLAZMA,
-        TEST
+        PLAZMA_CUT,
+        TEST,
+        PLAZMA_COAG
     };
 
 
