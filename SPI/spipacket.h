@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "../defs.h"
+#include "../Rest/defs.h"
 #include "../Rest/crc.h"
 #include "../Rest/loggable.h"
 #include "../SPI/SPI.h"

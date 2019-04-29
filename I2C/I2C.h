@@ -15,7 +15,7 @@
 #include <cerrno>
 #include <cstdlib>
 
-#include "../defs.h"
+#include "Rest/defs.h"
 #include "../Rest/loggable.h"
 
 #define ACK_I2C 0x06
@@ -25,9 +25,8 @@
 
 #define OK_I2C 0x00
 #define NOK_I2C 0x01
-
-class I2C : public Loggable
-{
+#ifdef __linux__
+class I2C : public Loggable {
 public:
     static I2C & getInstance();
 
@@ -57,5 +56,5 @@ private:
     void setDeviceName(std::string name);
 
 };
-
+#endif
 #endif //C_CLASS_I2C_H

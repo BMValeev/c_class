@@ -6,8 +6,7 @@
 
 SPIPacket::SPIPacket(std::string deviceName, LogCallback cb)
     : Loggable(cb)
-    , mDeviceName(deviceName)
-{ }
+    , mDeviceName(deviceName) { }
 
 uint8_t SPIPacket::send(uint8_t cmd,
                         std::vector<uint8_t> &payload,

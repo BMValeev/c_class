@@ -8,6 +8,12 @@ set(SOURCE_FILES
         ConnModule.cpp
         I2C.cpp
         BoardModule.cpp
+        i2cpacket.cpp
+        stc3115_Driver.cpp
+        #charge.cpp
+        chargeinterface.cpp
+        Fpga_fhd.cpp
+        Board_FHD.cpp
         )
 add_library(${PROJECT_NAME} ${SOURCE_FILES})
 

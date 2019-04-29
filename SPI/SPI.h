@@ -12,7 +12,7 @@
 #include <algorithm>
 #include <mutex>
 
-#include "../defs.h"
+#include "../Rest/defs.h"
 #include "../Rest/loggable.h"
 
 #define ACK_SPI 0x30
@@ -41,7 +41,7 @@
 #ifndef SPI_RX_BUFFER_SIZE
     #define SPI_RX_BUFFER_SIZE 10
 #endif
-
+#ifdef __linux__
 // Low level class that implements basic information exchange via SPI on Hamming board
 class SPI : public Loggable
 {
@@ -77,4 +77,5 @@ private:
     void setDeviceName(std::string name);
 
 };
+#endif
 #endif //C_CLASS_SPI_H

@@ -1,6 +1,7 @@
 /*
  *Created by eleps on 27.04.18.
 */
+#ifdef __linux__
 #include "SPI.h"
 
 #include <unistd.h>
@@ -172,7 +173,7 @@ uint8_t SPI::transaction(std::vector<uint8_t>& buffer, uint8_t ansLen, uint16_t 
     printLog(DebugLog, static_cast<std::string>(__func__) + " ended succesfully");
     return OK_SPI;
 }
-
+#endif
 
 
 

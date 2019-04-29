@@ -5,7 +5,7 @@
 #ifndef C_CLASS_BOARDMODULE_H
 #define C_CLASS_BOARDMODULE_H
 
-#include "../defs.h"
+#include "Rest/defs.h"
 #include "i2cpacket.h"
 #include <vector>
 

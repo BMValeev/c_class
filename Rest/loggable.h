@@ -1,7 +1,7 @@
 #ifndef LOGGABLE_H
 #define LOGGABLE_H
 
-#include "../defs.h"
+#include "defs.h"
 
 typedef std::function<void(uint8_t, std::string)> LogCallback;
 

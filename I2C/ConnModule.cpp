@@ -3,8 +3,6 @@
 //
 
 #include "ConnModule.h"
-
-#include "../Rest/crc.h"
 #include "I2C.h"
 
 // ConnModule class

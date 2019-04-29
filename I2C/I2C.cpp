@@ -1,7 +1,7 @@
 /*
  *Created by eleps on 27.04.18.
  */
-
+#ifdef __linux__
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -15,7 +15,6 @@
 #include <linux/i2c.h>
 #include "../Rest/crc.h"
 #include "I2C.h"
-
 // I2C class
 I2C* I2C::theOneTrueInstance = nullptr;
 
@@ -36,7 +35,6 @@ I2C::I2C()
     if (theOneTrueInstance) throw std::logic_error("Instance already exists");
     theOneTrueInstance = this;
 }
-
 void I2C::setDeviceName(std::string name)
 {
     if (mDeviceName == name)
@@ -45,7 +43,6 @@ void I2C::setDeviceName(std::string name)
     printLog(DebugLog, static_cast<std::string>(__func__) + "Device name set to :" + name);
     mDeviceName = name;
 }
-
 uint32_t I2C::begin(std::string device, LogCallback cb)
 {
     // Lock the mutex first
@@ -66,7 +63,6 @@ uint32_t I2C::begin(std::string device, LogCallback cb)
 
     return OK_I2C;
 }
-
 uint32_t I2C::transaction(uint8_t address, std::vector<uint8_t> buffer, uint32_t ansLen)
 {
     // Lock the mutex first
@@ -77,7 +73,7 @@ uint32_t I2C::transaction(uint8_t address, std::vector<uint8_t> buffer, uint32_t
     uint32_t cnt, cnt_all;
     uint8_t buf_rec[40] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
             ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-
+    memset(&buf_rec, 0, sizeof(buf_rec));
     std::string data_send,data_rec;
     i2c_rdwr_ioctl_data message;
     memset(&message, 0, sizeof(message));
@@ -130,3 +126,4 @@ uint32_t I2C::transaction(uint8_t address, std::vector<uint8_t> buffer, uint32_t
         }
     }
 */
+#endif

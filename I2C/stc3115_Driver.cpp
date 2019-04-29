@@ -141,7 +141,8 @@ int STC3115::Write(int NumberOfBytes, uint8_t RegAddress , uint8_t *TxBuffer)
     tx_msg.insert(tx_msg.begin(),RegAddress);
 
     // Send
-    res_ = i2c.transaction(addr, tx_msg, 0);
+    res_ = i2c.transaction(addr.front(), tx_msg, 0);
+    //res_ = i2c.transaction(addr, tx_msg, 0);
     res = res_ == OK_I2C? OK_STC : !OK_STC;
 
     return(res);
@@ -174,7 +175,8 @@ int STC3115::Read(int NumberOfBytes, uint8_t RegAddress , uint8_t *RxBuffer)
     tx_msg.push_back(RegAddress);
 
     // Send
-    res_ = i2c.transaction(addr, tx_msg, static_cast<unsigned int>(NumberOfBytes));
+    res_ = i2c.transaction(addr.front(), tx_msg, static_cast<unsigned int>(NumberOfBytes));
+    //res_ = i2c.transaction(addr, tx_msg, static_cast<unsigned int>(NumberOfBytes));
     res = res_ == OK_I2C? OK_STC : !OK_STC;
 
     // Copy to recieve buffer

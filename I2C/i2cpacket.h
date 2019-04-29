@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <vector>
 
-#include "../defs.h"
+#include "Rest/defs.h"
 #include "../Rest/loggable.h"
 
 #define I2C_PACKET_TRANSACTION_ATTEMPTS_NUMBER 3

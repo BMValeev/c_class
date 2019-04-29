@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 14)
 
 set(SOURCE_FILES
         crc.cpp
+        loggable.cpp
+        defs.cpp
         )
 add_library(${PROJECT_NAME} ${SOURCE_FILES})
 
