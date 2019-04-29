@@ -2,14 +2,7 @@
 // Created by eleps on 07.02.19.
 //
 
-#include <unistd.h>
 #include <stdint.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <linux/spi/spidev.h>
-#include <stdio.h>
-#include <errno.h>
-#include <stdlib.h>
 #include "../Rest/crc.h"
 #include "SPI.h"
 #include "MCU.h"

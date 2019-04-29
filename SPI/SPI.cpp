@@ -4,17 +4,9 @@
 #ifdef __linux__
 #include "SPI.h"
 
-#include <unistd.h>
-#include <stdint.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
-#include <stdio.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <cassert>
-
-#include "../Rest/crc.h"
 
 // SPI class
 SPI* SPI::theOneTrueInstance = nullptr;

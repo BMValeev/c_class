@@ -12,8 +12,7 @@ uint8_t SPIPacket::send(uint8_t cmd,
                         std::vector<uint8_t> &payload,
                         std::vector<uint8_t> &answer,
                         int attempts,
-                        uint16_t pause) const
-{
+                        uint16_t pause) const {
     std::ignore = payload;
     std::ignore = attempts;
     std::ignore = pause;
@@ -32,8 +31,7 @@ uint8_t SPIPacket::transaction(uint8_t cmd,
                                std::vector<uint8_t> &txMsg,
                                std::vector<uint8_t> &rxMsg,
                                uint8_t rxLen,
-                               uint16_t pause) const
-{
+                               uint16_t pause) const {
     std::ignore = cmd;
     std::ignore = txMsg;
     std::ignore = rxMsg;

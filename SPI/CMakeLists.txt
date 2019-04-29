@@ -5,8 +5,6 @@ set(CMAKE_CXX_STANDARD 14)
 set(SOURCE_FILES
         SPI.cpp
         MCU.cpp
-        spipacketdemo.cpp
-        spipacketplatform.cpp
         spipacket.cpp
         )
 add_library(${PROJECT_NAME} ${SOURCE_FILES})

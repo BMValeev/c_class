@@ -22,7 +22,7 @@ set(CMAKE_CXX_STANDARD 14)
 
 add_library(${PROJECT_NAME} ${SOURCE_FILES})
 
-
+#add_definitions(-DDEMO)
 include_directories( ${PROJECT_SOURCE_DIR} )
 include_directories( ${PROJECT_SOURCE_DIR}/SPI )
 add_subdirectory( ${PROJECT_SOURCE_DIR}/SPI )

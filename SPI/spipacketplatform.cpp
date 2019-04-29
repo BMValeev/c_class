@@ -7,14 +7,11 @@
  */
 
 #include <cassert>
-
+#include "MCU.h"// this is only for debug mode to form answer, probably remove later
 #include "SPI.h"
-#include "MCU.h" // this is only for debug mode to form answer, probably remove later
-
 SPIPacket::SPIPacket(std::string deviceName, LogCallback cb)
     : Loggable(cb)
-    , mDeviceName(deviceName)
-{
+    , mDeviceName(deviceName) {
     SPI::getInstance().begin(deviceName, cb);
 }
 
@@ -22,8 +19,7 @@ uint8_t SPIPacket::send(uint8_t cmd,
                         std::vector<uint8_t> &payload,
                         std::vector<uint8_t> &answer,
                         int attempts,
-                        uint16_t pause) const
-{
+                        uint16_t pause) const {
     // Get answer length
     uint8_t rxLen = getRxCnt(cmd);
 
@@ -68,8 +64,7 @@ uint8_t SPIPacket::transaction(uint8_t cmd,
                                std::vector<uint8_t> &txMsg,
                                std::vector<uint8_t> &rxMsg,
                                uint8_t rxLen,
-                               uint16_t pause) const
-{
+                               uint16_t pause) const {
     assert(txMsg.size() < SPI_PACKET_MAX_TX_SIZE);
 
     printLog(DebugLog, static_cast<std::string>(__func__) + " started");
