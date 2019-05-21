@@ -3,22 +3,6 @@ project(HardwareClasses)
 
 set(CMAKE_CXX_STANDARD 14)
 
-#set(SOURCE_FILES
-#        Gpio/GPIOSysfs.cpp
-#        Gpio/gpiointerface.cpp
-#        Backlight/screenlight.cpp
-#        Backlight/backlight_driver.cpp
-#        Backlight/backlight_pwm.cpp
-#        Backlight/backlightinterface.cpp
-#        SPI/SPI.cpp
-#        SPI/MCU.cpp
-#       Rest/crc.cpp
-#        I2C/I2C.cpp
-#        I2C/ConnModule.cpp
-#        I2C/I2C.cpp
-#        I2C/BoardModule.cpp
-#        Rest/crc.cpp
-#        )
 
 add_library(${PROJECT_NAME} ${SOURCE_FILES})
 

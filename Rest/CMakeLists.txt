@@ -7,6 +7,7 @@ set(SOURCE_FILES
         crc.cpp
         loggable.cpp
         defs.cpp
+        FlashCard.cpp
         )
 add_library(${PROJECT_NAME} ${SOURCE_FILES})
 

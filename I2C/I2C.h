@@ -28,16 +28,14 @@
 #ifdef __linux__
 class I2C : public Loggable {
 public:
+    //virtual static I2C & getInstance(std::string device)=0;
     static I2C & getInstance();
-
     uint32_t begin(std::string device, LogCallback cb = printToCout);
     std::vector<uint8_t> recData() { return mLastRecMsg; }
     void cleanRecMsg() { mLastRecMsg.clear(); }
     bool isInitialized() const { return theOneTrueInstance != nullptr; }
-
     // Transmission
     uint32_t transaction(uint8_t address, std::vector<uint8_t> buffer, uint32_t ansLen);
-
 protected:
     I2C();
     ~I2C() { }
@@ -51,10 +49,9 @@ private:
     const uint32_t mMaxLen;
     uint32_t mMsgLen;
     struct i2c_client *mI2CData;
-
     // Helpers
     void setDeviceName(std::string name);
-
 };
+
 #endif
 #endif //C_CLASS_I2C_H

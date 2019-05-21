@@ -3,17 +3,11 @@
  */
 #ifdef __linux__
 #include <unistd.h>
-#include <sys/types.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <cstdint>
-#include <fcntl.h>
-#include <sys/ioctl.h>
 #include <linux/i2c-dev.h>
-#include <sys/stat.h>
 #include <linux/i2c.h>
-#include "../Rest/crc.h"
 #include "I2C.h"
 // I2C class
 I2C* I2C::theOneTrueInstance = nullptr;
@@ -126,4 +120,5 @@ uint32_t I2C::transaction(uint8_t address, std::vector<uint8_t> buffer, uint32_t
         }
     }
 */
+
 #endif
